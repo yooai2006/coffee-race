@@ -56,13 +56,16 @@ function create() {
   scene.fog = new THREE.Fog(0x0e0b09, 14, 34);
   const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 100);
 
-  scene.add(new THREE.HemisphereLight(0xffe6c8, 0x1a120c, 0.45));
+  const hemi = new THREE.HemisphereLight(0xffe6c8, 0x1a120c, 0.45);
+  scene.add(hemi);
   const lamp = new THREE.SpotLight(0xffd9a0, 420, 0, 0.62, 0.55, 2);
   lamp.position.set(0, 9.5, 0); lamp.castShadow = true; lamp.shadow.mapSize.set(1024, 1024); lamp.shadow.bias = -0.0004;
   scene.add(lamp, lamp.target);
-  // 겨눠진 사람을 비추는 붉은 조명
-  const redSpot = new THREE.SpotLight(0xff3020, 0, 0, 0.32, 0.6, 2);
-  redSpot.position.set(0, 9, 0); scene.add(redSpot, redSpot.target);
+  // 겨눠진 사람만 바로 위에서 밝게 비추는 조명. focus(0..1)가 커지면 이 조명이 켜지고 방의 나머지는 어두워진다.
+  const focusSpot = new THREE.SpotLight(0xfff2dc, 0, 0, 0.2, 0.45, 2);
+  focusSpot.castShadow = true; focusSpot.shadow.mapSize.set(512, 512);
+  scene.add(focusSpot, focusSpot.target);
+  const FOCUS_MAX = 420;
 
   {
     const floor = new THREE.Mesh(new THREE.CircleGeometry(30, 48), new THREE.MeshStandardMaterial({ color: 0x2a1d15, roughness: 0.9 }));
@@ -93,7 +96,7 @@ function create() {
   let seats = [], plan = null, runToken = 0, playing = false;
   let tweens = [], particles = [], fx = null;
   let heart = { on: false, t: 0, gap: 0.8, vol: 0.6 };
-  let shake = 0, flicker = 0, zoomFov = 0;
+  let shake = 0, flicker = 0, zoomFov = 0, focus = 0;
   const camPos = new THREE.Vector3(9, 7, 9), camLook = new THREE.Vector3(0, 1, 0);
   const wantPos = camPos.clone(), wantLook = camLook.clone();
   let camRate = 2.5, idleCam = true;
@@ -289,8 +292,9 @@ function create() {
       T.aimed++;
       hud(turn);
       ui.banner(`${S.player.name} 🔫➜ ${T.player.name}`);
-      redSpot.position.set(T.head.x * 0.4, 8, T.head.z * 0.4); redSpot.target.position.copy(T.head);
-      tween(0.4, k => { redSpot.intensity = 260 * k; });
+      // 바로 위에서 탁자 쪽으로 살짝 기울여 얼굴까지 비춘다
+      focusSpot.position.copy(T.head).addScaledVector(T.dir, -1.6).setY(8.5); focusSpot.target.position.copy(T.head).setY(T.h * 0.4);
+      tween(0.4, k => { focus = Math.max(focus, k); });
       T.tremble = 1;
       heart = { on: true, t: 0, gap: 0.85 - 0.3 * (f - 1), vol: 0.45 + 0.35 * (f - 1) };
       playCall(T.animal.name, { vol: 0.5, pan: 0 });
@@ -312,7 +316,7 @@ function create() {
         gun.spentHoles[(CHAMBERS - turn.left) % CHAMBERS].material = spentMat;
         hud({ ...turn, left: turn.left - 1 }, '휴~ 빈 칸!');
         T.tremble = 0; T.hop = 1;
-        tween(0.5, k => { redSpot.intensity = 260 * (1 - k); zoomFov *= 0.85; });
+        tween(0.5, k => { focus = 1 - k; zoomFov *= 0.85; });
         await wait(0.35); if (!alive()) return;
         playCall(T.animal.name, { vol: 0.8 });
         ui.banner(`😮‍💨 휴~ ${T.player.name} 살았다! 다음은 ${T.player.name} 차례`);
@@ -346,7 +350,7 @@ function create() {
     playLoserCry(T.animal.name);
     // 나머지는 기뻐서 폴짝
     seats.forEach((st, i) => { if (st !== T) setTimeout(() => { if (token === runToken) st.hop = 1; }, 300 + i * 180); });
-    await tween(0.6, k => { redSpot.intensity = 260 * (1 - k); });
+    // 맞은 사람은 결과가 나올 때까지 조명을 받는다
     await wait(3.2);
     if (token !== runToken) return;
     showResult(T);
@@ -377,7 +381,7 @@ function create() {
   }
   function stopEffects() {
     tweens = []; heart.on = false; shake = 0; zoomFov = 0;
-    redSpot.intensity = 0; clearParticles(); resetGun();
+    focus = 0; clearParticles(); resetGun();
   }
   function stop() {
     runToken++; playing = false; idleCam = true;
@@ -421,7 +425,9 @@ function create() {
 
     // 전등이 살짝 깜빡인다
     flicker += dt;
-    lamp.intensity = 420 * (0.94 + 0.06 * Math.sin(flicker * 13) * Math.sin(flicker * 3.1));
+    lamp.intensity = 420 * (0.94 + 0.06 * Math.sin(flicker * 13) * Math.sin(flicker * 3.1)) * (1 - 0.88 * focus);
+    hemi.intensity = 0.45 * (1 - 0.75 * focus);
+    focusSpot.intensity = FOCUS_MAX * focus;
 
     // 카메라
     if (idleCam) {
