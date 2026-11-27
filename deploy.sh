@@ -1,7 +1,7 @@
 #!/bin/sh
-# horse-race.html 을 Cloudflare(coffee-race)에 배포한다. 게임을 고친 뒤 다시 실행하면 새 버전이 올라간다.
+# public/ 폴더를 Cloudflare(coffee-race)에 그대로 배포한다. 빌드 단계는 없다.
+# wrangler 버전을 고정해서, 새 버전이 나와도 배포가 갑자기 깨지지 않게 한다.
 set -e
 cd "$(dirname "$0")"
-rm -rf site && mkdir site
-cp horse-race.html site/index.html
-npx --yes wrangler@latest deploy
+npm test
+npx --yes wrangler@4.168.0 deploy

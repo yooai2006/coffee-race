@@ -1,0 +1,42 @@
+/* 모든 게임이 같이 쓰는 기본 스타일: 패널, 버튼, 카운트다운, 배너, 소리 버튼, 섬광 */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #1b2a1b;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; color: #1d1d1f; }
+canvas { display: block; }
+.hidden { display: none !important; }
+
+.panel { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(720px, 94vw); max-height: 90vh; overflow: auto; z-index: 10;
+  background: rgba(255,255,255,0.94); border-radius: 18px; padding: 24px 26px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35); backdrop-filter: blur(8px); }
+.panel.wide { width: min(1000px, 96vw); }
+.panel h1 { margin: 0 0 4px; font-size: 26px; }
+.panel .sub { margin: 0 0 18px; color: #555; font-size: 14px; }
+
+button { font: inherit; cursor: pointer; border: none; border-radius: 10px; }
+.btn { padding: 10px 16px; background: #2f7d32; color: #fff; font-weight: 700; }
+.btn.ghost { background: #eef3ee; color: #2f5d31; }
+.btn:disabled { background: #bbb; cursor: not-allowed; }
+
+#countdown { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 6;
+  pointer-events: none; font-size: 140px; font-weight: 900; color: #fff; text-shadow: 0 6px 30px rgba(0,0,0,0.5); }
+#countdown.pop { animation: pop 0.8s ease-out forwards; }
+@keyframes pop { 0% { transform: scale(2); opacity: 0; } 25% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.8); opacity: 0; } }
+
+#banner { position: fixed; top: 22px; left: 50%; transform: translateX(-50%); z-index: 6; pointer-events: none;
+  background: rgba(0,0,0,0.6); color: #fff; padding: 10px 22px; border-radius: 999px; font-size: 22px; font-weight: 800;
+  opacity: 0; transition: opacity 0.3s; white-space: nowrap; }
+#banner.show { opacity: 1; }
+#muteBtn { position: fixed; top: 10px; right: 10px; z-index: 12; width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(0,0,0,0.5); color: #fff; font-size: 20px; line-height: 42px; padding: 0; }
+#flash { position: fixed; inset: 0; background: #fff; z-index: 7; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
+#flash.on { opacity: 1; transition: none; }
+
+/* ── 모바일: 기본 규칙을 덮어써야 하므로 반드시 맨 끝 ── */
+@media (max-width: 600px) {
+  .panel { padding: 16px 14px; border-radius: 14px; max-height: 94vh; }
+  .panel h1 { font-size: 21px; }
+  .panel .sub { font-size: 13px; margin-bottom: 12px; }
+  #banner { top: auto; bottom: 26px; font-size: 17px; white-space: normal; text-align: center; width: max-content; max-width: 92vw; border-radius: 16px; }
+  #countdown { font-size: 110px; }
+}

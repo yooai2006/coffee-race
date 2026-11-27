@@ -1,0 +1,58 @@
+/* 경마 전용 스타일: 설정 화면, 실시간 순위표, 결과표. 공용 규칙은 shared/base.css */
+.setupGrid { display: grid; grid-template-columns: 1fr 260px; gap: 22px; align-items: start; }
+.preview { position: sticky; top: 0; display: flex; flex-direction: column; align-items: center; padding: 10px 10px 14px;
+  border-radius: 14px; background: linear-gradient(#cfe9f7, #e8f4e2); }
+#pv { width: 240px; height: 260px; display: block; }
+#pvName { font-size: 22px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+#pvName i { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+#pvOwner { font-size: 14px; color: #4a5a4a; margin-top: 2px; min-height: 18px; }
+
+.inputRow { display: flex; gap: 8px; }
+.inputRow input { flex: 1; font-size: 16px; padding: 10px 12px; border: 2px solid #ddd; border-radius: 10px; outline: none; }
+.inputRow input:focus { border-color: #2f7d32; }
+
+#pickList { margin: 16px 0 8px; display: flex; flex-direction: column; gap: 10px; }
+.row { border: 1px solid #e5e5e5; border-radius: 12px; padding: 10px 12px; background: #fafafa; }
+.pname { display: flex; align-items: center; justify-content: space-between; font-weight: 800; margin-bottom: 8px; }
+.pname .x { background: transparent; color: #999; font-size: 20px; padding: 0 6px; }
+.horses { display: flex; flex-wrap: wrap; gap: 6px; }
+.hbtn { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: #fff; border: 2px solid #e2e2e2; font-size: 14px; }
+.hbtn i { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.25); display: inline-block; }
+.hbtn.sel { border-color: #2f7d32; background: #e8f5e9; font-weight: 800; }
+.hbtn:disabled { opacity: 0.3; cursor: not-allowed; }
+.footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
+.footer > div { display: flex; gap: 8px; }
+#hint { color: #666; font-size: 14px; }
+
+#hud { position: fixed; top: 14px; left: 14px; z-index: 5; background: rgba(0,0,0,0.55); color: #fff;
+  border-radius: 12px; padding: 10px 12px; min-width: 180px; font-size: 14px; }
+#hud h3 { margin: 0 0 6px; font-size: 13px; opacity: 0.8; font-weight: 600; }
+#hud .r { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+#hud .r b { width: 18px; text-align: right; }
+#hud .r i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+#hud .r.done { opacity: 0.75; }
+
+#result table { width: 100%; border-collapse: collapse; margin: 12px 0 6px; font-size: 16px; }
+#result th, #result td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #eee; }
+#result th { color: #777; font-size: 13px; font-weight: 600; }
+#result td.rk { font-weight: 900; width: 54px; }
+#result .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: -1px; }
+
+/* ── 모바일: 기본 규칙을 덮어써야 하므로 반드시 맨 끝 ── */
+@media (max-width: 760px) {
+  .setupGrid { grid-template-columns: 1fr; gap: 14px; }
+  .preview { order: -1; position: static; flex-direction: row; gap: 10px; padding: 6px 12px; }
+  #pv { width: 130px !important; height: 120px !important; }
+  #pvName { font-size: 20px; }
+}
+@media (max-width: 600px) {
+  .footer { flex-direction: column; align-items: stretch; }
+  .footer > div { display: grid; grid-template-columns: 1fr 1fr; }
+  .footer #startBtn { grid-column: 1 / -1; padding: 13px; font-size: 17px; }
+  #hint { text-align: center; }
+  #hud { top: 8px; left: 8px; padding: 6px 9px; min-width: 0; font-size: 12px; background: rgba(0,0,0,0.42); }
+  #hud h3 { display: none; }
+  #result h1 { font-size: 20px; line-height: 1.35; }
+  #result th, #result td { padding: 9px 4px; font-size: 15px; white-space: nowrap; }
+  #result td.rk { width: 40px; }
+}

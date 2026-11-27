@@ -1,0 +1,10 @@
+{
+  "name": "coffee-race",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes serve@14 public",
+    "test": "node --test",
+    "deploy": "./deploy.sh"
+  }
+}
