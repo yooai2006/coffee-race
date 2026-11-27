@@ -26,6 +26,10 @@ export function createPlinkoAudio() {
       const f = midi(96 - row * 2 + Math.floor(Math.random() * 3));
       playVoices([{ wave: 'sine', f, dur: 0.09, gain: 0.12 }, { wave: 'triangle', f: f * 2.01, dur: 0.05, gain: 0.03 }], { vol: 1, ...panOpt(pan) });
     },
+    // 동물끼리 부딪힘: 뿅!
+    bump(pan) {
+      playVoices([{ wave: 'sine', f: [[0, 260], [0.4, 620], [1, 420]], dur: 0.14, gain: 0.22 }, { wave: 'noise', dur: 0.03, filter: ['bandpass', 1500, 2], gain: 0.15 }], panOpt(pan));
+    },
     safe() {
       playVoices([[0, 76], [0.08, 79], [0.16, 84]].map(([at, n]) => ({ at, wave: 'square', f: midi(n), dur: 0.1, filter: ['lowpass', 3000, 1], gain: 0.14 })));
     },

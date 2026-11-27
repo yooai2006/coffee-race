@@ -130,11 +130,12 @@ function create() {
       model.root.rotation.y = -PI / 2 + 0.5;   // 앞(+x)이 살짝 화면 쪽을 보게
       const color = PLAYER_COLORS[i], label = makeLabel(p.name, color);
       label.position.y = model.height * s * 0.6 + 0.45; holder.add(label);
-      const z = (i - (players.length - 1) / 2) * 0.2;   // 겹쳐도 앞뒤로 조금씩 비켜 보이게
+      const z = (i - (players.length - 1) / 2) * 0.02;   // 모두 같은 판 위 (이름표가 깜빡이지 않을 만큼만 비킨다)
       const path = buildPath(i);
       holder.position.set(path[0].x, path[0].y, z); scene.add(holder);
       return { player: p, animal: ANIMALS[p.animal], color, holder, spin, model, label, path, seg: 0, z, landed: false, order: 0,
-        spinV: (Math.random() - 0.5) * 8, phase: Math.random() * 6, startle: 0, settle: 0 };
+        spinV: (Math.random() - 0.5) * 8, phase: Math.random() * 6, startle: 0, settle: 0,
+        bx: path[0].x, by: path[0].y, off: new THREE.Vector2(), vel: new THREE.Vector2(), bumpCd: 0 };
     });
     resize();
   }
@@ -173,6 +174,38 @@ function create() {
       sound.stop(1.2);
       const token = runToken;
       endTimer = setTimeout(() => { if (token === runToken) showResult(); }, 3600);
+    }
+  }
+
+  // ── 동물끼리 부딪히면 튕겨 나간다 ──
+  // 정해진 경로(bx, by)에 스프링으로 묶인 어긋남(off)을 더한다. 겹치면 서로 밀어내고 튕기는 속도를 준다.
+  // 착지 직전에는 어긋남이 0으로 줄어들어, 정해진 칸에 정확히 들어간다.
+  const BUMP_R = 0.55, SPRING = 40, DAMP = 7, KICK = 7;
+  const tmpA = new THREE.Vector2(), tmpB = new THREE.Vector2(), nrm = new THREE.Vector2();
+  function bump(dt) {
+    const air = runners.filter(rn => !rn.landed);
+    const fade = rn => Math.min(1, Math.max(0, (rn.path.at(-1).t - t) / 0.6));
+    for (let i = 0; i < air.length; i++) for (let j = i + 1; j < air.length; j++) {
+      const a = air[i], b = air[j], fa = fade(a), fb = fade(b);
+      tmpA.set(a.bx + a.off.x * fa, a.by + a.off.y * fa); tmpB.set(b.bx + b.off.x * fb, b.by + b.off.y * fb);
+      nrm.subVectors(tmpA, tmpB);
+      const d = nrm.length();
+      if (d >= BUMP_R * 2) continue;
+      if (d < 1e-4) nrm.set(Math.random() - 0.5, Math.random() - 0.5);
+      nrm.normalize();
+      const push = (BUMP_R * 2 - d) / 2;
+      a.off.addScaledVector(nrm, push); b.off.addScaledVector(nrm, -push);
+      if (a.vel.dot(nrm) - b.vel.dot(nrm) < KICK) { a.vel.addScaledVector(nrm, KICK * 0.5); b.vel.addScaledVector(nrm, -KICK * 0.5); }
+      a.spinV = -a.spinV * 1.2; b.spinV = -b.spinV * 1.2;
+      if (a.bumpCd <= 0 && b.bumpCd <= 0) { sound.bump((tmpA.x + tmpB.x) / W); a.bumpCd = b.bumpCd = 0.2; }
+    }
+    for (const rn of air) {
+      rn.bumpCd -= dt;
+      rn.vel.addScaledVector(rn.off, -SPRING * dt).multiplyScalar(Math.exp(-DAMP * dt));
+      rn.off.addScaledVector(rn.vel, dt);
+      if (rn.off.length() > 1.1) rn.off.setLength(1.1);
+      const f = fade(rn), x = THREE.MathUtils.clamp(rn.bx + rn.off.x * f, -W / 2 + 0.45, W / 2 - 0.45);
+      rn.holder.position.set(x, rn.by + rn.off.y * f, rn.z);
     }
   }
 
@@ -241,8 +274,7 @@ function create() {
         }
         if (!rn.landed) {
           const a = rn.path[rn.seg], b = rn.path[rn.seg + 1];
-          const [x, y] = hopPos(a, b, t);
-          rn.holder.position.set(x, y, rn.z);
+          [rn.bx, rn.by] = hopPos(a, b, t);   // 정해진 경로 위치. 실제 위치는 bump()에서 부딪힘을 더해 정한다
           rn.spin.rotation.z += rn.spinV * dt;
         }
       }
@@ -257,6 +289,7 @@ function create() {
         rn.model.animate(rn.phase, rn.startle ? 0.8 : 0.1);
       } else rn.model.animate(rn.phase += dt * 6, 0.5);
     }
+    if (phase === 'drop' || phase === 'result') bump(dt);
     for (const peg of pegs.values()) if (peg.glow > 0) { peg.glow = Math.max(0, peg.glow - dt * 3); peg.mesh.material.emissiveIntensity = peg.glow * 1.4; }
     hitPulse = Math.max(0, hitPulse - dt * 0.25);
 

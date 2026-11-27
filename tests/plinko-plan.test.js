@@ -18,6 +18,7 @@ test('경로: 출발 위치가 겹치지 않고, 벽 안에서 움직여 정해�
   for (let k = 0; k < 300; k++) {
     const p = planPlinko(8);
     assert.equal(new Set(p.starts).size, 8);
+    assert.equal(new Set(p.slots).size, 8);   // 서로 다른 칸
     p.moves.forEach((mv, i) => {
       assert.equal(mv.length, ROWS);
       let m = p.starts[i];

@@ -4,7 +4,7 @@
 // 규칙
 // - 동물들이 위에서 동시에 떨어져 못(ROWS줄)에 부딪히며 바닥 칸(SLOTS개) 중 하나에 들어간다.
 // - ☕ 표시가 바닥 칸 위를 좌우로 오간다. 동물이 칸에 들어가는 순간 그 칸에 ☕가 있으면 당첨(커피).
-// - 정확히 한 마리만 당첨된다. 당첨되면 ☕는 그 칸에 멈추고, 그 뒤 들어오는 동물은 다른 칸으로 간다.
+// - 정확히 한 마리만 당첨된다. 당첨되면 ☕는 그 칸에 멈춘다. 동물마다 서로 다른 칸에 들어간다.
 //
 // 좌표: 가로 위치는 m(반 칸 단위 정수). 못 하나를 지날 때마다 m이 ±1 바뀐다.
 //   못 줄 r의 위치는 m ≡ r+1 (mod 2), |m| ≤ 7. 바닥 칸 s의 가운데는 m = 2s-7.
@@ -26,27 +26,42 @@ export function markerAt(plan, t) {
 export const slotM = s => 2 * s - (SLOTS - 1);
 
 // n마리 계획. 동물 i의 경로: starts[i](출발 m), moves[i](ROWS개의 ±1), hops[i](못→못, 마지막은 못→칸 시간), T[i](착지 시각)
+// 동물마다 서로 다른 칸에 들어간다 (바닥에서 겹치지 않게). 조건에 맞는 배치가 안 나오면 처음부터 다시 정한다.
 export function planPlinko(n, rand = Math.random) {
+  for (let tries = 0; tries < 500; tries++) {
+    const p = tryPlan(n, rand);
+    if (p) return p;
+  }
+  throw new Error('계획을 만들지 못했습니다');
+}
+
+function tryPlan(n, rand) {
   const ri = k => Math.floor(rand() * k);
   const hops = Array.from({ length: n }, () => Array.from({ length: ROWS }, (_, r) => r === ROWS - 1 ? 0.45 : 0.3 + rand() * 0.22));
   const T = hops.map(h => FALL0 + h.reduce((a, b) => a + b, 0));
   const loser = ri(n), loserSlot = ri(SLOTS), freezeT = T[loser];
   const phase = loserSlot - MARKER_SPEED * freezeT;   // 당첨 순간 ☕가 정확히 그 칸 가운데에 오게
 
-  const slots = T.map((t, i) => {
-    if (i === loser) return loserSlot;
-    const ok = [...Array(SLOTS).keys()].filter(s => t < freezeT ? Math.abs(pingpong(MARKER_SPEED * t + phase) - s) >= SAFE_GAP : s !== loserSlot);
-    return ok[ri(ok.length)];
-  });
+  // 칸 정하기: 착지할 때 ☕와 떨어진 칸 중에서, 아직 아무도 안 쓴 칸
+  const slots = Array(n).fill(-1), used = new Set([loserSlot]);
+  slots[loser] = loserSlot;
+  const others = [...Array(n).keys()].filter(i => i !== loser).sort(() => rand() - 0.5);
+  for (const i of others) {
+    const t = T[i];
+    const ok = [...Array(SLOTS).keys()].filter(s => !used.has(s) &&
+      (t < freezeT ? Math.abs(pingpong(MARKER_SPEED * t + phase) - s) >= SAFE_GAP : s !== loserSlot));
+    if (!ok.length) return null;
+    slots[i] = ok[ri(ok.length)]; used.add(slots[i]);
+  }
 
-  // 출발 위치는 서로 다르게 (8칸 = 홀수 m 8개). 칸까지 갈 수 있는 배치가 나올 때까지 섞는다
+  // 출발 위치도 서로 다르게 (8칸 = 홀수 m 8개). 칸까지 갈 수 있는 배치가 나올 때까지 섞는다
   const STARTS = Array.from({ length: SLOTS }, (_, s) => slotM(s));
-  for (let tries = 0; tries < 2000; tries++) {
+  for (let k = 0; k < 300; k++) {
     const perm = [...STARTS].sort(() => rand() - 0.5).slice(0, n);
     const moves = perm.map((m0, i) => pathFor(m0, slotM(slots[i]), rand));
     if (moves.every(Boolean)) return { n, loser, loserSlot, freezeT, phase, T, hops, slots, starts: perm, moves };
   }
-  throw new Error('경로를 만들지 못했습니다');
+  return null;
 }
 
 // m0에서 시작해 ROWS번 ±1 움직여 mEnd에 닿는 경로. 중간에 벽(|m| > M_MAX)을 넘으면 다시 섞는다
