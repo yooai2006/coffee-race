@@ -53,7 +53,7 @@ tests/                        Node 테스트 (three.js·DOM이 없는 순수 로
 
 1. `public/games/<게임-이름>/game.js`를 만듭니다. 형식은 `public/app.js` 맨 위 설명을 따릅니다.
    ```js
-   export default { id, title, emoji, rule, startLabel, create() }
+   export default { id, title, emoji, rule, startLabel, seconds(n), create() }   // seconds: n명일 때 평균 시간(초)
    // create()는 { scene, camera, start(players), stop(), update(dt, time), resize() }를 돌려준다
    ```
 2. `public/games/registry.js`의 `GAMES`에 추가합니다. 설정 화면에 버튼이 생깁니다.

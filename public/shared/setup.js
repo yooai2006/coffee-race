@@ -58,18 +58,26 @@ function addFromInput() {
   if (added < names.length) $('#hint').textContent = `이미 있는 이름이나 ${MAX_PLAYERS}명을 넘는 이름은 빼고 넣었어요`;
 }
 
+// 게임 시간 표시: 참가자 수(최소 2명)로 계산하고, 5초 단위로 반올림한다
+const nForTime = () => Math.max(2, players.length);
+function fmtTime(sec) {
+  const s = Math.max(5, Math.round(sec / 5) * 5);
+  return s < 60 ? `약 ${s}초` : `약 ${Math.floor(s / 60)}분${s % 60 ? ` ${s % 60}초` : ''}`;
+}
+
 // 게임 고르기 버튼. 첫 번째 게임이 기본값이라 주소에는 다른 게임일 때만 ?g= 를 남긴다.
 function renderGamePick() {
   const box = $('#gamePick'); box.innerHTML = '';
   for (const g of games) {
     const b = document.createElement('button');
     b.className = 'gbtn' + (g.id === gameId ? ' sel' : '');
-    b.textContent = `${g.emoji} ${g.title}`;
+    b.innerHTML = `${g.emoji} ${g.title}<small>${fmtTime(g.seconds(nForTime()))}</small>`;
     b.onclick = () => { if (g.id !== gameId) { gameId = g.id; onGameChange(g); renderSetup(); } };
     box.appendChild(b);
   }
   const g = currentGame();
-  $('#gameRule').textContent = g.rule;
+  const n = nForTime(), byPeople = g.seconds(2) !== g.seconds(8);
+  $('#gameRule').textContent = `⏱ 평균 ${fmtTime(g.seconds(n))}${byPeople ? ` (${n}명 기준)` : ''} · ${g.rule}`;
   $('#startBtn').textContent = g.startLabel;
 }
 

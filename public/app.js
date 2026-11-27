@@ -1,7 +1,8 @@
 // 앱 본체: 렌더러 하나를 모든 게임이 같이 쓰고, 설정 화면에서 고른 게임을 실행한다.
 //
 // 게임 모듈 형식 (games/registry.js 에 등록):
-//   export default { id, title, emoji, rule, startLabel, create() }
+//   export default { id, title, emoji, rule, startLabel, seconds(n), create() }
+//   seconds(n): 참가자 n명일 때 평균 걸리는 시간(초). 설정 화면의 게임 버튼에 보여 준다
 //   create()가 돌려주는 객체:
 //     scene, camera           렌더링할 장면과 카메라
 //     start(players)          게임 시작. players[i] = { name, animal }, 색은 PLAYER_COLORS[i]

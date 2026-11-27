@@ -61,6 +61,7 @@
 .gamePick { display: flex; gap: 8px; margin: 10px 0 8px; flex-wrap: wrap; }
 .gbtn { padding: 8px 14px; background: #eef3ee; color: #2f5d31; font-weight: 800; border: 2px solid transparent; }
 .gbtn.sel { background: #2f7d32; color: #fff; }
+.gbtn small { display: block; font-size: 11px; font-weight: 600; opacity: 0.7; margin-top: 1px; }
 
 /* ── 러시안 룰렛 정보판 ── */
 #hud .chambers { display: flex; gap: 5px; margin: 2px 0 6px; }
