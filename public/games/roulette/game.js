@@ -348,7 +348,7 @@ function create() {
     // 총이 반동으로 튄다
     const r0 = gun.root.rotation.z;
     tween(0.5, k => { gun.root.rotation.z = r0 + Math.sin(PI * k) * 0.5 * (1 - k); });
-    ui.banner(`☕ ${T.player.name} 당첨! 커피 사세요~`);
+    ui.banner(`☕ ${T.player.name} 당첨!`);
     // 맞은 동물이 깜짝 놀라 펄쩍 뛴다
     T.startle = 1; addExclaim(T); surprisedShot(T);
     playCall(T.animal.name, { vol: 1 });
