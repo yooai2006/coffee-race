@@ -5,7 +5,7 @@
 // 탭이 가려지면 같이 멈추고, stop()이 runToken을 바꾸면 이어지지 않고 끝난다.
 import * as THREE from 'three';
 import { esc } from '../../shared/util.js';
-import { disposeTree } from '../../shared/three-utils.js';
+import { canvasTex, disposeTree } from '../../shared/three-utils.js';
 import { ANIMALS, makeAnimal } from '../../shared/animals.js';
 import { playCall, playLoserCry } from '../../shared/animal-sounds.js';
 import { playVoices } from '../../shared/audio.js';
@@ -128,7 +128,7 @@ function create() {
       const label = makeLabel(p.name, color); label.position.y = h + 0.7 + (i % 2) * 0.55; holder.add(label);
       scene.add(holder);
       return { player: p, animal: ANIMALS[p.animal], color, holder, model, dir, h, head: new THREE.Vector3(dir.x * SEAT_R, h * 0.8, dir.z * SEAT_R),
-        label, phase: Math.random() * 6, tremble: 0, hop: 0, fallen: 0, stars: null, aimed: 0 };
+        label, phase: Math.random() * 6, tremble: 0, hop: 0, startle: 0, exclaim: null, aimed: 0 };
     });
     resize();
   }
@@ -190,11 +190,11 @@ function create() {
       .setY(Math.max(shooter.h + 1.4, portrait ? 4.6 : 3.8));
     wantLook.lerpVectors(gunSpot(shooter), target.head, 0.7); camRate = 2.2;
   }
-  // 쓰러진 사람을 탁자 쪽 위에서 내려다본다
-  function fallenShot(st) {
+  // 깜짝 놀란 사람을 탁자 쪽에서 정면으로 본다
+  function surprisedShot(st) {
     const portrait = isPortrait();
-    wantPos.copy(st.dir).multiplyScalar(SEAT_R * (portrait ? 0.1 : 0.3)).setY(portrait ? 6.5 : 4.6);
-    wantLook.copy(st.dir).multiplyScalar(SEAT_R + 0.6).setY(0.4); camRate = 1.5;
+    wantPos.copy(st.dir).multiplyScalar(SEAT_R * (portrait ? 0.05 : 0.25)).setY(st.h + (portrait ? 2.4 : 1.6));
+    wantLook.copy(st.dir).multiplyScalar(SEAT_R).setY(st.h * 0.75); camRate = 1.8;
   }
 
   // ── 화면 위 정보판: 남은 칸, 발사 확률, 누가 누구를 ──
@@ -248,16 +248,16 @@ function create() {
     particles = [];
   }
 
-  // ── 쓰러진 동물 머리 위로 도는 별 ──
-  function addStars(st) {
-    const g = new THREE.Group(), mat = new THREE.MeshBasicMaterial({ color: 0xffe14a });
-    for (let i = 0; i < 4; i++) {
-      const s = new THREE.Mesh(new THREE.OctahedronGeometry(0.13), mat);
-      s.position.set(Math.cos(i / 4 * TAU) * 0.45, 0, Math.sin(i / 4 * TAU) * 0.45); g.add(s);
-    }
-    // 뒤로 쓰러지므로 머리는 가운데 반대쪽 바닥 근처에 있다
-    g.position.copy(st.dir).multiplyScalar(Math.min(st.h * 0.55, 1.4)).setY(0.55);
-    st.holder.add(g); st.stars = g;
+  // ── 깜짝 놀란 동물 머리 위에 뜨는 느낌표 ──
+  function addExclaim(st) {
+    const tex = canvasTex(128, 128, (x, w, h) => {
+      x.font = 'bold 110px -apple-system, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.lineWidth = 12; x.strokeStyle = '#3a2200'; x.strokeText('!!', w / 2, h / 2 + 4);
+      x.fillStyle = '#ffd23f'; x.fillText('!!', w / 2, h / 2 + 4);
+    });
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
+    sp.renderOrder = 11; sp.position.set(0, st.h + 0.35, 0); sp.scale.setScalar(0.01);
+    st.holder.add(sp); st.exclaim = sp;
   }
 
   // ───────────── 게임 진행 ─────────────
@@ -338,11 +338,11 @@ function create() {
     const r0 = gun.root.rotation.z;
     tween(0.5, k => { gun.root.rotation.z = r0 + Math.sin(PI * k) * 0.5 * (1 - k); });
     ui.banner(`☕ ${T.player.name} 당첨! 커피 사세요~`);
-    // 맞은 동물이 뒤로 쓰러진다
-    await tween(0.7, k => { T.fallen = ease(k); });
+    // 맞은 동물이 깜짝 놀라 펄쩍 뛴다
+    T.startle = 1; addExclaim(T); surprisedShot(T);
+    playCall(T.animal.name, { vol: 1 });
+    await wait(0.9);
     if (token !== runToken) return;
-    addStars(T);
-    fallenShot(T);
     playLoserCry(T.animal.name);
     // 나머지는 기뻐서 폴짝
     seats.forEach((st, i) => { if (st !== T) setTimeout(() => { if (token === runToken) st.hop = 1; }, 300 + i * 180); });
@@ -398,8 +398,18 @@ function create() {
       st.hop = Math.max(0, st.hop - dt * 1.6);
       const hopY = st.hop > 0 ? Math.abs(Math.sin((1 - st.hop) * PI * 2)) * 0.6 * st.hop : 0;
       st.holder.position.set(st.dir.x * SEAT_R + jx, hopY, st.dir.z * SEAT_R + jz);
-      st.model.root.rotation.z = st.fallen * 1.45;
-      if (st.stars) { st.stars.rotation.y += dt * 4; st.stars.position.y = 0.55 + Math.sin(time * 3) * 0.08; }
+      // 깜짝 놀람: 크게 펄쩍 + 뒤로 움찔했다가 돌아오고, 느낌표가 튀어나와 통통 튄다
+      if (st.startle > 0) {
+        st.startle = Math.max(0, st.startle - dt * 1.1);
+        const k = 1 - st.startle;
+        st.holder.position.y += Math.max(0, Math.sin(Math.min(1, k * 2.2) * PI)) * 1.2;
+        st.model.root.rotation.z = Math.sin(Math.min(1, k * 1.6) * PI) * 0.4;
+      }
+      if (st.exclaim) {
+        const age = st.exclaim.userData.age = (st.exclaim.userData.age || 0) + dt;
+        st.exclaim.scale.setScalar(Math.min(1, age * 6) * (0.75 + Math.sin(time * 9) * 0.06));
+        st.exclaim.position.y = st.h + 0.35 + Math.abs(Math.sin(time * 5)) * 0.12;
+      }
     }
     updateParticles(dt);
 
