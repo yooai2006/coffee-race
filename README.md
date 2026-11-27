@@ -72,8 +72,14 @@ npm test
 
 ## 배포 (Cloudflare)
 
-```sh
-./deploy.sh
-```
+`main`에 올리면 GitHub Actions(`.github/workflows/deploy.yml`)가 테스트를 돌린 뒤 `public/` 폴더를 자동으로 배포합니다.
+Actions 탭에서 **Deploy → Run workflow**로 직접 실행할 수도 있습니다.
 
-테스트를 돌린 뒤 `public/` 폴더를 `wrangler deploy`로 올립니다. 설정은 `wrangler.jsonc`에 있습니다.
+저장소 **Settings → Secrets and variables → Actions**에 아래 두 값이 있어야 합니다.
+
+| 이름 | 값 |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare → Workers → coffee-race → 설정 → 빌드 → 외부 CI/CD용 API 토큰 |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare 계정 ID |
+
+내 컴퓨터에서 직접 배포하려면 `./deploy.sh`를 실행합니다. 설정은 `wrangler.jsonc`에 있습니다.
