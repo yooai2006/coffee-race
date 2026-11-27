@@ -30,12 +30,13 @@ public/                       ← 이 폴더를 그대로 배포 (빌드 단계 
     animals.js                동물 18종 3D 모델 (ANIMALS, makeAnimal)
     audio.js                  Web Audio 소리 엔진, 음소거 버튼
     animal-sounds.js          동물 울음소리, 꼴찌 울음 + 트롬본
+    music.js                  배경 음악 도구 (음 예약, 박자 반복기, 음량 버스)
     roster.js                 참가자 목록 ↔ 주소창, 참가자 색, 최대 인원(8)
     base.css, util.js, three-utils.js
   games/
     registry.js               게임 목록 (첫 번째가 기본값)
-    horse-race/               🏇 동물 레이스: game.js, track.js, race-plan.js
-    roulette/                 🔫 러시안 룰렛: game.js, gun.js, plan.js
+    horse-race/               🏇 동물 레이스: game.js, track.js, race-plan.js, sound.js(음악·관중·발소리)
+    roulette/                 🔫 러시안 룰렛: game.js, gun.js, plan.js, bgm.js(긴장 음악)
 tests/                        Node 테스트 (three.js·DOM이 없는 순수 로직)
 ```
 

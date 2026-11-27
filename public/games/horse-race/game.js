@@ -10,6 +10,7 @@ import { makeLabel, sizeLabels } from '../../shared/labels.js';
 import { ui } from '../../shared/ui.js';
 import { LANE_W, X_FIN, laneR, lapLen, trackPoint, buildTrack } from './track.js';
 import { planRace, frac } from './race-plan.js';
+import { createRaceAudio } from './sound.js';
 
 const PI = Math.PI;
 const K_STOP = 8;   // 결승 뒤 멈추는 빠르기
@@ -44,6 +45,7 @@ function create() {
   // ── 상태 ──
   let phase = 'idle', runners = [], raceT = 0, timeScale = 1, finishCamT = 0, finishedCount = 0, resultTimer = 0, finishCamZ = 0, finishCamSpan = 0;
   let runToken = 0, hudAcc = 0;
+  const sound = createRaceAudio();
 
   function runnerDist(rn, t) {
     if (t <= 0) return 0;
@@ -165,13 +167,16 @@ function create() {
     buildRace(players);
     phase = 'countdown';
     updateHud();
+    sound.crowd();
     if (!await ui.countdown(() => token === runToken)) return;
     phase = 'race';
+    sound.go();
   }
 
   function stop() {
     runToken++;
     clearRunners(); clearTimeout(resultTimer);
+    sound.stop();
     phase = 'idle';
   }
 
@@ -186,9 +191,10 @@ function create() {
       for (const rn of runners) {
         if (rn.finished || raceT < rn.T) continue;
         rn.finished = true; finishedCount++;
-        if (finishedCount === 1) ui.banner(`🏁 1위 골인! ${rn.player.name} (${rn.animal.name})`);
+        if (finishedCount === 1) { ui.banner(`🏁 1위 골인! ${rn.player.name} (${rn.animal.name})`); sound.firstIn(); }
         if (finishedCount === runners.length) {
           ui.banner('🏁 경주 종료!');
+          sound.end();
           playLoserCry(rn.animal.name);   // 마지막으로 들어온 동물이 운다
           timeScale = 1;
           resultTimer = setTimeout(showResult, 2200);
@@ -202,7 +208,10 @@ function create() {
         const x = tmpPos.copy(rn.root.position).project(camera).x;
         playCall(rn.animal.name, { vol: 0.45, pan: THREE.MathUtils.clamp(x, -1, 1) * 0.8 });
       }
-      if ((hudAcc += dt) > 0.15) { hudAcc = 0; updateHud(); }
+      if ((hudAcc += dt) > 0.15) {
+        hudAcc = 0; updateHud();
+        if (finishedCount === 0) sound.setExcite(Math.max(...runners.map(rn => rn.d / rn.L)));
+      }
     }
     updateCamera(dt, time);
   }
