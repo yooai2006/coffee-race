@@ -2,5 +2,6 @@
 // 새 게임은 games/<이름>/game.js 를 만들고 여기에 추가한다 (형식은 app.js 맨 위 설명 참고).
 import race from './horse-race/game.js';
 import roulette from './roulette/game.js';
+import plinko from './plinko/game.js';
 
-export const GAMES = [race, roulette];
+export const GAMES = [race, roulette, plinko];
