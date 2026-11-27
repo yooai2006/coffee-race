@@ -160,13 +160,12 @@ function create() {
     rn.holder.position.set(rn.path.at(-1).x, FLOOR_Y, rn.z);
     if (rn === runners[plan.loser]) {
       sound.hit(); ui.flash(); ui.pop('☕!');
-      ui.banner(`☕ ${rn.player.name} 당첨! 커피 사세요~`);
+      ui.banner(`☕ ${rn.player.name} 당첨!`);
       rn.startle = 1; hitPulse = 1;
       playCall(rn.animal.name, { vol: 1 });
       setTimeout(() => playLoserCry(rn.animal.name), 700);
     } else {
       sound.safe();
-      if (landed === 1 || Math.random() < 0.5) ui.banner(`✅ ${rn.player.name} 안전!`);
       playCall(rn.animal.name, { vol: 0.45, pan: rn.holder.position.x / (W / 2) * 0.7 });
     }
     hud();
