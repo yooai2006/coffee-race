@@ -5,7 +5,8 @@
 // 탭이 가려지면 같이 멈추고, stop()이 runToken을 바꾸면 이어지지 않고 끝난다.
 import * as THREE from 'three';
 import { esc } from '../../shared/util.js';
-import { canvasTex, disposeTree } from '../../shared/three-utils.js';
+import { disposeTree } from '../../shared/three-utils.js';
+import { createBurst, makeExclaim, animateExclaim } from '../../shared/fx.js';
 import { ANIMALS, makeAnimal } from '../../shared/animals.js';
 import { playCall, playLoserCry } from '../../shared/animal-sounds.js';
 import { playVoices } from '../../shared/audio.js';
@@ -96,7 +97,7 @@ function create() {
 
   // ───────────── 상태 ─────────────
   let seats = [], plan = null, runToken = 0, playing = false;
-  let tweens = [], particles = [], fx = null;
+  let tweens = [];
   let heart = { on: false, t: 0, gap: 0.8, vol: 0.6 };
   let shake = 0, flicker = 0, zoomFov = 0, focus = 0;
   const camPos = new THREE.Vector3(9, 7, 9), camLook = new THREE.Vector3(0, 1, 0);
@@ -213,57 +214,9 @@ function create() {
       ${note ? `<div class="note">${note}</div>` : ''}`);
   }
 
-  // ── 커피콩 폭죽 ──
-  const beanGeo = new THREE.SphereGeometry(1, 10, 8), beanMat = new THREE.MeshStandardMaterial({ color: 0x4a2a14, roughness: 0.35 });
-  const confGeo = new THREE.PlaneGeometry(0.16, 0.09);
-  const CONF_COLORS = [0xffd166, 0xef476f, 0x06d6a0, 0x118ab2, 0xffffff, 0xf78c6b];
-  function burst(origin, dir) {
-    fx = fx || new THREE.Group(); scene.add(fx);
-    const add = (mesh, speed, spread, drag) => {
-      mesh.position.copy(origin); mesh.castShadow = true; fx.add(mesh);
-      const v = dir.clone().multiplyScalar(speed * (0.6 + Math.random() * 0.6))
-        .add(new THREE.Vector3((Math.random() - 0.5) * spread, Math.random() * spread * 0.8, (Math.random() - 0.5) * spread));
-      particles.push({ mesh, v, spin: new THREE.Vector3(Math.random() * 12, Math.random() * 12, Math.random() * 12), drag, rest: false });
-    };
-    for (let i = 0; i < 70; i++) {
-      const m = new THREE.Mesh(beanGeo, beanMat); m.scale.set(0.11, 0.075, 0.065);
-      add(m, 7, 4.5, 0.4);
-    }
-    for (let i = 0; i < 90; i++) {
-      const m = new THREE.Mesh(confGeo, new THREE.MeshStandardMaterial({ color: CONF_COLORS[i % CONF_COLORS.length], side: THREE.DoubleSide, roughness: 0.6 }));
-      add(m, 5, 6, 2.2);
-    }
-  }
-  function updateParticles(dt) {
-    for (const p of particles) {
-      if (p.rest) continue;
-      p.v.y -= 9.8 * dt * (p.drag > 1 ? 0.35 : 1);
-      p.v.multiplyScalar(Math.exp(-p.drag * dt));
-      p.mesh.position.addScaledVector(p.v, dt);
-      p.mesh.rotation.x += p.spin.x * dt; p.mesh.rotation.y += p.spin.y * dt; p.mesh.rotation.z += p.spin.z * dt;
-      const pos = p.mesh.position, onTable = Math.hypot(pos.x, pos.z) < TABLE_R, floorY = (onTable ? TABLE_Y : 0) + 0.03;
-      if (pos.y < floorY && p.v.y < 0) {
-        pos.y = floorY; p.v.y *= -0.35; p.v.x *= 0.6; p.v.z *= 0.6; p.spin.multiplyScalar(0.5);
-        if (Math.abs(p.v.y) < 0.4) { p.rest = true; p.mesh.rotation.x = -PI / 2 + (p.drag > 1 ? 0 : 0.3); }
-      }
-    }
-  }
-  function clearParticles() {
-    if (fx) { fx.children.forEach(m => { if (m.material !== beanMat) m.material.dispose(); }); scene.remove(fx); fx = null; }
-    particles = [];
-  }
-
-  // ── 깜짝 놀란 동물 머리 위에 뜨는 느낌표 ──
-  function addExclaim(st) {
-    const tex = canvasTex(128, 128, (x, w, h) => {
-      x.font = 'bold 110px -apple-system, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-      x.lineWidth = 12; x.strokeStyle = '#3a2200'; x.strokeText('!!', w / 2, h / 2 + 4);
-      x.fillStyle = '#ffd23f'; x.fillText('!!', w / 2, h / 2 + 4);
-    });
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
-    sp.renderOrder = 11; sp.position.set(0, st.h + 0.35, 0); sp.scale.setScalar(0.01);
-    st.holder.add(sp); st.exclaim = sp;
-  }
+  // ── 커피콩 폭죽, 놀란 동물 머리 위 느낌표 (shared/fx.js) ──
+  const fxBurst = createBurst(scene, (x, z) => Math.hypot(x, z) < TABLE_R ? TABLE_Y : 0);
+  function addExclaim(st) { const sp = makeExclaim(); sp.position.y = st.h + 0.35; st.holder.add(sp); st.exclaim = sp; }
 
   // ───────────── 게임 진행 ─────────────
   async function runGame(token) {
@@ -341,7 +294,7 @@ function create() {
     ui.pop('빵!'); ui.flash();
     shake = 1; zoomFov = 0; heart.on = false;
     const origin = gun.muzzle.getWorldPosition(new THREE.Vector3());
-    burst(origin, T.head.clone().sub(origin).normalize());
+    fxBurst.burst(origin, T.head.clone().sub(origin).normalize());
     gun.spentHoles[(CHAMBERS - plan.turns.at(-1).left) % CHAMBERS].material = spentMat;
     hud(plan.turns.at(-1), '☕ 커피콩 명중!');
     T.tremble = 0;
@@ -388,7 +341,7 @@ function create() {
   }
   function stopEffects() {
     tweens = []; heart.on = false; shake = 0; zoomFov = 0;
-    focus = 0; clearParticles(); resetGun();
+    focus = 0; fxBurst.clear(); resetGun();
   }
   function stop() {
     runToken++; playing = false; idleCam = true;
@@ -417,13 +370,9 @@ function create() {
         st.holder.position.y += Math.max(0, Math.sin(Math.min(1, k * 2.2) * PI)) * 1.2;
         st.model.root.rotation.z = Math.sin(Math.min(1, k * 1.6) * PI) * 0.4;
       }
-      if (st.exclaim) {
-        const age = st.exclaim.userData.age = (st.exclaim.userData.age || 0) + dt;
-        st.exclaim.scale.setScalar(Math.min(1, age * 6) * (0.75 + Math.sin(time * 9) * 0.06));
-        st.exclaim.position.y = st.h + 0.35 + Math.abs(Math.sin(time * 5)) * 0.12;
-      }
+      if (st.exclaim) animateExclaim(st.exclaim, dt, time, st.h + 0.35);
     }
-    updateParticles(dt);
+    fxBurst.update(dt);
 
     // 심장 소리
     if (heart.on && (heart.t -= dt) <= 0) {
