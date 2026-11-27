@@ -12,7 +12,7 @@ import { playVoices } from '../../shared/audio.js';
 import { PLAYER_COLORS } from '../../shared/roster.js';
 import { makeLabel, sizeLabels } from '../../shared/labels.js';
 import { ui } from '../../shared/ui.js';
-import { planRoulette, CHAMBERS } from './plan.js';
+import { planRoulette, firePercent, CHAMBERS } from './plan.js';
 import { buildGun } from './gun.js';
 
 const PI = Math.PI, TAU = PI * 2;
@@ -138,6 +138,7 @@ function create() {
   const yawTo = (from, to) => Math.atan2(-(to.z - from.z), to.x - from.x);
   const pitchTo = (from, to) => Math.atan2(to.y - from.y, Math.hypot(to.x - from.x, to.z - from.z));
   const gunSpot = st => new THREE.Vector3(st.dir.x * GUN_R, GUN_Y, st.dir.z * GUN_R);
+  // extraTurns는 반드시 정수: 소수면 멈춘 방향이 겨눈 사람과 어긋난다
   function turnYaw(fromYaw, toYaw, extraTurns) {
     const d = ((toYaw - fromYaw) % TAU + TAU) % TAU;
     return fromYaw + d + extraTurns * TAU;
@@ -146,7 +147,7 @@ function create() {
   // 처음: 탁자 위에서 총을 돌려 먼저 쏠 사람을 정한다 (병 돌리기)
   async function spinToFirst(st) {
     sfx('spin', 0.8);
-    const y0 = gun.root.rotation.y, y1 = turnYaw(y0, yawTo(gun.root.position, st.head), 3 + Math.random());
+    const y0 = gun.root.rotation.y, y1 = turnYaw(y0, yawTo(gun.root.position, st.head), 3 + Math.floor(Math.random() * 2));
     await tween(2.4, k => { gun.root.rotation.y = y0 + (y1 - y0) * ease(k); });
   }
   // 쏠 사람 앞으로 날아가기
@@ -202,7 +203,7 @@ function create() {
     const S = seats[turn.shooter], T = seats[turn.target];
     ui.hud('러시안 룰렛', `
       <div class="chambers">${holes}</div>
-      <div class="odds">남은 칸 <b>${turn.left}</b> · 발사 확률 <b>1/${turn.left}</b></div>
+      <div class="odds">남은 칸 <b>${turn.left}</b> · 발사 확률 <b>${firePercent(turn.left)}%</b></div>
       <div class="duel"><i style="background:${S.color}"></i>${esc(S.player.name)} <span>🔫➜</span> ${T ? `<i style="background:${T.color}"></i>${esc(T.player.name)}` : '?'}</div>
       ${note ? `<div class="note">${note}</div>` : ''}`);
   }

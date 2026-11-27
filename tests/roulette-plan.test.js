@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { planRoulette, CHAMBERS } from '../public/games/roulette/plan.js';
+import { planRoulette, firePercent, CHAMBERS } from '../public/games/roulette/plan.js';
 
 test('규칙대로 진행된다: 자기 자신은 안 겨누고, 맞을 뻔한 사람이 다음에 쏜다', () => {
   for (let n = 2; n <= 8; n++) {
@@ -28,4 +28,8 @@ test('커피콩은 1번째부터 8번째 방아쇠까지 모두 나올 수 있�
 test('2명이면 둘이 번갈아 쏜다', () => {
   const { turns } = planRoulette(2);
   turns.forEach((t, i) => assert.equal(t.shooter, (turns[0].shooter + i) % 2));
+});
+
+test('발사 확률(%)', () => {
+  assert.deepEqual([8, 7, 6, 5, 4, 3, 2, 1].map(firePercent), [12.5, 14.3, 16.7, 20, 25, 33.3, 50, 100]);
 });

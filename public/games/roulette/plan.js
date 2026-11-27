@@ -8,6 +8,9 @@
 
 export const CHAMBERS = 8;
 
+// 남은 칸이 n개일 때 이번 방아쇠에 나갈 확률(%, 소수 첫째 자리) — 12.5, 14.3, 16.7, 20, 25, 33.3, 50, 100
+export const firePercent = n => Math.round(1000 / n) / 10;
+
 // turns[k] = { shooter, target, left(이번 방아쇠 전 남은 칸 수), fired }
 export function planRoulette(n, chambers = CHAMBERS, rand = Math.random) {
   const fireAt = Math.floor(rand() * chambers);   // 0부터 센 방아쇠 순번
