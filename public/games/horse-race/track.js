@@ -1,8 +1,7 @@
 // 경마장: 트랙 모양(trackPoint)과 배경(잔디, 레인, 난간, 결승선, 관중석, 나무)
 import * as THREE from 'three';
 import { canvasTex } from '../../shared/three-utils.js';
-
-export const MAX_PLAYERS = 8;   // 레인 수 = 최대 참가자 수
+import { MAX_PLAYERS } from '../../shared/roster.js';   // 레인 수 = 최대 참가자 수
 
 // 트랙: 두 직선(S) + 두 반원. 결승선 = 출발선 (아래쪽 직선 위 x = X_FIN), 1바퀴 경주.
 export const S = 56, R_IN = 22, LANE_W = 2.4, PAD = 1.5;

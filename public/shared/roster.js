@@ -1,6 +1,7 @@
 // 참가자 목록 ↔ 주소창 (?p=민수:고양이,영희:호랑이,민기)
 // 설정이 바뀔 때마다 주소를 갱신하므로, 그 링크를 공유하거나 북마크하면 같은 멤버로 바로 시작할 수 있다.
 // 참가자: { name, animal: ANIMALS 인덱스 | null }
+export const MAX_PLAYERS = 8;
 // 참가자 순서대로 쓰는 색 (최대 8명)
 export const PLAYER_COLORS = ['#e63946', '#1d4ed8', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
@@ -39,8 +40,11 @@ export function parseRoster(q, animalNames, max) {
 export function loadRosterFromUrl(animalNames, max) {
   return parseRoster(new URLSearchParams(location.search).get('p'), animalNames, max);
 }
-export function saveRosterToUrl(players, animalNames) {
+// extra: 함께 저장할 다른 주소 값 (예: { g: 'roulette' }). 값이 null이면 주소에서 뺀다.
+export function saveRosterToUrl(players, animalNames, extra = {}) {
   const url = new URL(location.href), q = serializeRoster(players, animalNames);
-  if (q) url.searchParams.set('p', q); else url.searchParams.delete('p');
+  for (const [k, v] of Object.entries({ ...extra, p: q || null })) {
+    if (v) url.searchParams.set(k, v); else url.searchParams.delete(k);
+  }
   try { history.replaceState(null, '', url); } catch { /* 일부 브라우저는 file:// 에서 주소 변경을 막는다 */ }
 }

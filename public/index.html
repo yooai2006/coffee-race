@@ -2,12 +2,62 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>☕ 커피 내기</title>
-<script>
-  // 기본 게임(경마)으로 보낸다. ?p=... 참가자 정보도 그대로 넘겨서 예전에 공유한 링크가 계속 동작한다.
-  // 나중에 게임 고르는 화면을 만들면 이 파일을 바꾸면 된다.
-  location.replace('games/horse-race/' + location.search + location.hash);
+<link rel="stylesheet" href="shared/base.css">
+<link rel="stylesheet" href="app.css">
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.170.0/build/three.module.js" } }
 </script>
 </head>
-<body><a href="games/horse-race/">☕ 커피 내기 경마로 가기</a></body>
+<body>
+
+<div id="setup" class="panel wide">
+ <div class="setupGrid">
+ <div>
+  <h1>☕ 커피 내기</h1>
+  <div id="gamePick" class="gamePick"></div>
+  <p class="sub" id="gameRule"></p>
+  <div class="inputRow">
+    <input id="nameInput" placeholder="이름 (예: 민수, 영희, 민기)" maxlength="60" autocomplete="off">
+    <button class="btn" id="addBtn">추가</button>
+  </div>
+  <div id="pickList"></div>
+  <div class="footer">
+    <span id="hint"></span>
+    <div>
+      <button class="btn ghost" id="shareBtn">🔗 링크 복사</button>
+      <button class="btn ghost" id="randBtn">동물 랜덤 배정</button>
+      <button class="btn" id="startBtn" disabled>시작</button>
+    </div>
+  </div>
+ </div>
+ <div class="preview">
+  <canvas id="pv"></canvas>
+  <div id="pvName"></div>
+  <div id="pvOwner"></div>
+ </div>
+ </div>
+</div>
+
+<div id="hud" class="hidden"><h3 id="hudTitle"></h3><div id="hudList"></div></div>
+<div id="countdown"></div>
+<div id="banner"></div>
+<div id="flash"></div>
+<button id="muteBtn" title="소리 켜기/끄기">🔊</button>
+
+<div id="result" class="panel hidden">
+  <h1 id="resultTitle"></h1>
+  <table><thead id="resultHead"></thead><tbody id="resultBody"></tbody></table>
+  <div class="footer">
+    <span></span>
+    <div>
+      <button class="btn ghost" id="resetBtn">처음부터</button>
+      <button class="btn" id="againBtn">같은 멤버로 다시</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
 </html>

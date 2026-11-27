@@ -1,14 +1,15 @@
-// 설정 화면: 참가자 입력, 동물 고르기, 3D 미리보기, 링크 복사, 랜덤 배정
+// 설정 화면 (모든 게임 공용): 게임 고르기, 참가자 입력, 동물 고르기, 3D 미리보기, 링크 복사, 랜덤 배정
 import * as THREE from 'three';
-import { $, esc, shuffle } from '../../shared/util.js';
-import { disposeTree } from '../../shared/three-utils.js';
-import { ANIMALS, makeAnimal } from '../../shared/animals.js';
-import { playCall } from '../../shared/animal-sounds.js';
-import { splitNames, addPlayers, loadRosterFromUrl, saveRosterToUrl } from '../../shared/roster.js';
-import { MAX_PLAYERS } from './track.js';
+import { $, esc, shuffle } from './util.js';
+import { disposeTree } from './three-utils.js';
+import { ANIMALS, makeAnimal } from './animals.js';
+import { playCall } from './animal-sounds.js';
+import { MAX_PLAYERS, splitNames, addPlayers, loadRosterFromUrl, saveRosterToUrl } from './roster.js';
 
 const ANIMAL_NAMES = ANIMALS.map(a => a.name);
 export const players = [];   // { name, animal: ANIMALS 인덱스 | null }
+let games = [], gameId = null, onGameChange = () => {};
+export const currentGame = () => games.find(g => g.id === gameId);
 
 // ── 동물 미리보기 (설정 화면 오른쪽, 별도 렌더러로 회전) ──
 const pvRenderer = new THREE.WebGLRenderer({ canvas: $('#pv'), antialias: true, alpha: true });
@@ -57,7 +58,23 @@ function addFromInput() {
   if (added < names.length) $('#hint').textContent = `이미 있는 이름이나 ${MAX_PLAYERS}명을 넘는 이름은 빼고 넣었어요`;
 }
 
+// 게임 고르기 버튼. 첫 번째 게임이 기본값이라 주소에는 다른 게임일 때만 ?g= 를 남긴다.
+function renderGamePick() {
+  const box = $('#gamePick'); box.innerHTML = '';
+  for (const g of games) {
+    const b = document.createElement('button');
+    b.className = 'gbtn' + (g.id === gameId ? ' sel' : '');
+    b.textContent = `${g.emoji} ${g.title}`;
+    b.onclick = () => { if (g.id !== gameId) { gameId = g.id; onGameChange(g); renderSetup(); } };
+    box.appendChild(b);
+  }
+  const g = currentGame();
+  $('#gameRule').textContent = g.rule;
+  $('#startBtn').textContent = g.startLabel;
+}
+
 export function renderSetup() {
+  renderGamePick();
   const list = $('#pickList'); list.innerHTML = '';
   players.forEach((p, pi) => {
     const row = document.createElement('div'); row.className = 'row';
@@ -86,17 +103,22 @@ export function renderSetup() {
   $('#startBtn').disabled = !ready;
   setPreview(pvPinned);
   $('#hint').textContent = players.length < 2 ? `참가자를 2명 이상 입력하세요 (최대 ${MAX_PLAYERS}명)` : ready ? '준비 완료!' : '각 참가자의 동물을 골라주세요';
-  saveRosterToUrl(players, ANIMAL_NAMES);
+  saveRosterToUrl(players, ANIMAL_NAMES, { g: gameId === games[0].id ? null : gameId });
 }
 
-// 설정 화면 버튼을 연결하고 주소창의 참가자를 불러온다. onStart: 경주 시작 버튼을 눌렀을 때
-export function initSetup({ onStart }) {
+// 설정 화면 버튼을 연결하고 주소창의 게임·참가자를 불러온다.
+// gameList: 게임 목록 (첫 번째가 기본값), onStart: 시작 버튼, onGame: 게임을 바꿨을 때 (처음에도 한 번 부른다)
+export function initSetup({ gameList, onStart, onGame }) {
+  games = gameList; onGameChange = onGame;
+  const g = new URLSearchParams(location.search).get('g');
+  gameId = games.some(x => x.id === g) ? g : games[0].id;
+  onGameChange(currentGame());
   players.push(...loadRosterFromUrl(ANIMAL_NAMES, MAX_PLAYERS));
   const first = players.find(p => p.animal !== null);
   if (first) pvPinned = first.animal;
 
   $('#shareBtn').onclick = async () => {
-    saveRosterToUrl(players, ANIMAL_NAMES);
+    renderSetup();   // 주소를 최신으로
     try { await navigator.clipboard.writeText(location.href); $('#hint').textContent = '🔗 링크를 복사했어요'; }
     catch { prompt('이 링크를 복사하세요', location.href); }
   };

@@ -1,55 +1,56 @@
 # ☕ 커피 내기 게임
 
-꼴찌가 커피를 사는 브라우저 게임 모음입니다. 기본 게임은 **경마**입니다.
+커피 살 사람을 정하는 브라우저 게임 모음입니다. 기본 게임은 **동물 레이스**입니다.
 
 **플레이:** https://coffee-race.dream-montage-web.workers.dev
 
 ## 게임
 
-| 게임 | 주소 | 설명 |
-|---|---|---|
-| 🏇 경마 (기본) | `/games/horse-race/` | 참가자마다 동물을 하나씩 골라 3D 트랙에서 경주시킵니다. 꼴찌로 들어온 동물의 주인이 커피를 삽니다. |
+첫 화면에서 참가자와 동물을 고른 뒤 게임을 고릅니다. 기본값은 동물 레이스입니다.
 
-첫 화면(`/`)은 기본 게임으로 바로 넘어갑니다. 주소의 `?p=...` 값도 함께 넘기므로 예전에 공유한 링크도 그대로 동작합니다.
+| 게임 | 규칙 |
+|---|---|
+| 🏇 동물 레이스 (기본) | 3D 트랙에서 1바퀴 경주. 꼴찌로 들어온 동물의 주인이 커피를 삽니다. |
+| 🔫 러시안 룰렛 | 동물들이 원형 탁자에 둘러앉습니다. 8칸 장난감 총에 커피콩 1발. 랜덤으로 서로 겨누고 쏘다가, 커피콩을 맞은 사람이 커피를 삽니다. 빈 칸이면 남은 칸이 1 줄고, 맞을 뻔한 사람이 다음에 쏩니다. |
+
+- 결과는 모두 **시작하는 순간** 정해지고, 화면은 그 결과를 연출합니다.
+- 주소에 참가자와 게임이 저장됩니다: `?p=민수:고양이,영희:호랑이&g=roulette` (`g`가 없으면 동물 레이스). 링크를 공유하면 같은 멤버, 같은 게임으로 바로 시작합니다.
+- 예전 주소 `/games/horse-race/`는 첫 화면으로 넘어갑니다.
 
 ## 폴더 구조
 
 ```
 public/                       ← 이 폴더를 그대로 배포 (빌드 단계 없음)
-  index.html                  첫 화면 → 기본 게임으로 이동
+  index.html, app.css         한 페이지 앱: 설정 화면, 정보판, 결과표
+  app.js                      렌더러와 매 프레임 루프, 게임 바꾸기 (게임 모듈 형식 설명이 맨 위에 있음)
   shared/                     모든 게임이 같이 쓰는 코드
-    base.css                  패널, 버튼, 카운트다운, 배너, 소리 버튼
-    util.js                   $, esc, sleep, shuffle, store(localStorage 안전하게)
-    three-utils.js            canvasTex, disposeTree
+    setup.js                  설정 화면 (게임 고르기, 참가자, 동물 고르기, 미리보기)
+    ui.js                     배너, 카운트다운, 섬광, 정보판, 결과표
+    labels.js                 3D 이름표
     animals.js                동물 18종 3D 모델 (ANIMALS, makeAnimal)
-    audio.js                  Web Audio 소리 엔진, 삐 소리, 음소거 버튼
+    audio.js                  Web Audio 소리 엔진, 음소거 버튼
     animal-sounds.js          동물 울음소리, 꼴찌 울음 + 트롬본
-    roster.js                 참가자 목록 ↔ 주소창(?p=), 참가자 색
+    roster.js                 참가자 목록 ↔ 주소창, 참가자 색, 최대 인원(8)
+    base.css, util.js, three-utils.js
   games/
-    horse-race/               경마
-      index.html, style.css
-      main.js                 장면, 경주 진행, 카메라, 순위표, 결과
-      setup.js                설정 화면 (참가자, 동물 고르기, 미리보기)
-      track.js                트랙 모양과 배경
-      race-plan.js            등수와 속도 곡선 (출발 순간 결과 확정)
+    registry.js               게임 목록 (첫 번째가 기본값)
+    horse-race/               🏇 동물 레이스: game.js, track.js, race-plan.js
+    roulette/                 🔫 러시안 룰렛: game.js, gun.js, plan.js
 tests/                        Node 테스트 (three.js·DOM이 없는 순수 로직)
 ```
 
 - 3D는 three.js(unpkg CDN), 소리는 Web Audio로 직접 합성합니다. 음원·모델 파일은 없습니다.
-- 각 게임 페이지가 `importmap`으로 three.js 버전을 정합니다.
 
 ## 새 게임 추가하기
 
-1. `public/games/<게임-이름>/` 폴더를 만듭니다. `games/horse-race/index.html`을 복사해서 시작하면 편합니다.
-2. `index.html`에서 `../../shared/base.css`와 게임 전용 `style.css`, `main.js`를 불러옵니다.
-3. 공용 기능은 `../../shared/...`에서 가져와 씁니다. 예:
+1. `public/games/<게임-이름>/game.js`를 만듭니다. 형식은 `public/app.js` 맨 위 설명을 따릅니다.
    ```js
-   import { ANIMALS, makeAnimal } from '../../shared/animals.js';
-   import { playCall, playLoserCry } from '../../shared/animal-sounds.js';
-   import { loadRosterFromUrl, saveRosterToUrl, PLAYER_COLORS } from '../../shared/roster.js';
-   import { bindMuteButton } from '../../shared/audio.js';
+   export default { id, title, emoji, rule, startLabel, create() }
+   // create()는 { scene, camera, start(players), stop(), update(dt, time), resize() }를 돌려준다
    ```
-4. 여러 게임이 같이 쓸 코드가 생기면 `shared/`로 옮깁니다. 한 게임만 쓰면 그 게임 폴더에 둡니다.
+2. `public/games/registry.js`의 `GAMES`에 추가합니다. 설정 화면에 버튼이 생깁니다.
+3. 공용 기능은 `../../shared/...`에서 가져옵니다 (`ANIMALS`, `makeAnimal`, `playCall`, `playLoserCry`, `ui`, `makeLabel`, `PLAYER_COLORS` 등).
+4. 결과를 정하는 로직은 DOM 없는 파일(`plan.js`처럼)로 나누고 `tests/`에 테스트를 넣습니다.
 5. 위 표에 게임을 추가합니다.
 
 ## 로컬에서 실행
@@ -68,7 +69,7 @@ three.js를 CDN에서 받으므로 인터넷 연결이 필요합니다.
 npm test
 ```
 
-경주 계획(등수, 결승 시각, 진행률이 뒤로 가지 않는지)과 참가자 주소 저장/읽기를 검사합니다.
+경주 계획(등수, 결승 시각, 진행률이 뒤로 가지 않는지), 룰렛 계획(규칙대로 도는지), 참가자 주소 저장/읽기를 검사합니다.
 
 ## 배포 (Cloudflare)
 
