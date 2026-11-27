@@ -35,6 +35,14 @@ function create() {
   sun.position.set(-8, 12, 6); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
   Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 40 });
   scene.add(sun);
+  // 폭탄을 든 사람만 위에서 밝게 비추는 조명. 폭탄이 날아가면 받는 사람 쪽으로 따라간다.
+  // focus(0..1)가 커지면 이 조명이 켜지고 주변은 어두워진다
+  const spot = new THREE.SpotLight(0xfff0d8, 0, 0, 0.3, 0.45, 2);
+  spot.position.set(0, 8, 0); spot.castShadow = true; spot.shadow.mapSize.set(512, 512);
+  scene.add(spot, spot.target);
+  const SPOT_MAX = 380;
+  let focus = 0;
+  const spotAt = new THREE.Vector3();
   {
     const grass = new THREE.Mesh(new THREE.CircleGeometry(30, 48), new THREE.MeshStandardMaterial({ color: 0x3f6b3a, roughness: 1 }));
     grass.rotation.x = -PI / 2; grass.receiveShadow = true; scene.add(grass);
@@ -45,12 +53,6 @@ function create() {
       }),
     }));
     mat.position.y = 0.025; mat.receiveShadow = true; scene.add(mat);
-    // 둘레의 작은 전구들
-    const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffe8a0 });
-    for (let i = 0; i < 24; i++) {
-      const a = (i / 24) * TAU, b = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), bulbMat);
-      b.position.set(Math.cos(a) * 7.5, 2.4 + Math.sin(i * 1.7) * 0.25, Math.sin(a) * 7.5); scene.add(b);
-    }
   }
 
   // ───────────── 폭탄: 둥근 몸통, 뚜껑, 심지, 불꽃, 남은 초 ─────────────
@@ -194,6 +196,22 @@ function create() {
     bomb.visible = true; timer.visible = true; bodyMat.emissiveIntensity = 0;
   }
 
+  // 조명이 비출 자리: 폭탄을 든 사람, 날아가는 중이면 던진 사람과 받는 사람 사이, 펑 뒤에는 맞은 사람
+  function updateSpot(dt) {
+    const on = plan && phase !== 'idle';
+    focus += ((on ? 1 : 0) - focus) * Math.min(1, dt * 3);
+    if (on) {
+      const where = phase === 'play' || phase === 'ready' ? bombAt(plan, Math.min(t, DURATION)) : { holder: plan.loser };
+      if (where.holder !== undefined) spotAt.copy(seats[where.holder].dir).multiplyScalar(SEAT_R - 0.4);
+      else spotAt.lerpVectors(seats[where.from].dir, seats[where.to].dir, where.k).multiplyScalar(SEAT_R - 0.4);
+      spot.target.position.lerp(spotAt, Math.min(1, dt * 12));
+      spot.position.set(spot.target.position.x * 0.85, 8, spot.target.position.z * 0.85);
+    }
+    spot.intensity = SPOT_MAX * focus;
+    hemi.intensity = 0.9 * (1 - 0.6 * focus);
+    sun.intensity = 1.5 * (1 - 0.7 * focus);
+  }
+
   const tmp = new THREE.Vector3();
   function update(dt, time) {
     if (phase === 'play') {
@@ -228,6 +246,7 @@ function create() {
     }
 
     placeBomb(dt, time);
+    updateSpot(dt);
     timer.position.copy(bomb.position).add(tmp.set(0, 1.0, 0));
 
     // 동물: 숨쉬기, 폭탄 든 동물은 덜덜, 받거나 던지면 폴짝, 펑에 깜짝
