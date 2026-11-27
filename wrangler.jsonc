@@ -1,0 +1,6 @@
+{
+  // horse-race.html 을 site/index.html 로 복사해 정적 파일로 배포한다 (deploy.sh)
+  "name": "coffee-race",
+  "compatibility_date": "2026-11-23",
+  "assets": { "directory": "./site" }
+}
