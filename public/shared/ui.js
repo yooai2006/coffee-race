@@ -7,9 +7,11 @@ export const ui = {
   hideBanner() { $('#banner').classList.remove('show'); },
 
   // 화면 가운데에 큰 글자를 튀어나오게 보여 준다 (0.8초)
-  pop(text) {
+  // mid: 긴 글자(예: '112.5m')는 조금 작게
+  pop(text, { mid = false } = {}) {
     const cd = $('#countdown');
-    cd.textContent = text; cd.classList.remove('pop'); void cd.offsetWidth; cd.classList.add('pop');
+    cd.textContent = text; cd.classList.toggle('mid', mid);
+    cd.classList.remove('pop'); void cd.offsetWidth; cd.classList.add('pop');
   },
   // 3, 2, 1, GO! 중간에 alive()가 false가 되면(처음으로 돌아가면) false를 돌려준다
   async countdown(alive) {

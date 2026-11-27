@@ -21,6 +21,8 @@ button { font: inherit; cursor: pointer; border: none; border-radius: 10px; }
 #countdown { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 6;
   pointer-events: none; font-size: 140px; font-weight: 900; color: #fff; text-shadow: 0 6px 30px rgba(0,0,0,0.5); }
 #countdown.pop { animation: pop 0.8s ease-out forwards; }
+#countdown.mid { font-size: 96px; }
+#countdown.mid.pop { animation-duration: 1.4s; }
 @keyframes pop { 0% { transform: scale(2); opacity: 0; } 25% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.8); opacity: 0; } }
 
 #banner { position: fixed; top: 22px; left: 50%; transform: translateX(-50%); z-index: 6; pointer-events: none;
@@ -39,4 +41,5 @@ button { font: inherit; cursor: pointer; border: none; border-radius: 10px; }
   .panel .sub { font-size: 13px; margin-bottom: 12px; }
   #banner { top: auto; bottom: 26px; font-size: 17px; white-space: normal; text-align: center; width: max-content; max-width: 92vw; border-radius: 16px; }
   #countdown { font-size: 110px; }
+  #countdown.mid { font-size: 64px; }
 }

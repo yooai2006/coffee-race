@@ -4,5 +4,6 @@ import race from './horse-race/game.js';
 import roulette from './roulette/game.js';
 import plinko from './plinko/game.js';
 import bomb from './bomb/game.js';
+import skijump from './skijump/game.js';
 
-export const GAMES = [race, roulette, plinko, bomb];
+export const GAMES = [race, roulette, plinko, bomb, skijump];
