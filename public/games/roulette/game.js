@@ -14,6 +14,7 @@ import { makeLabel, sizeLabels } from '../../shared/labels.js';
 import { ui } from '../../shared/ui.js';
 import { planRoulette, firePercent, CHAMBERS } from './plan.js';
 import { buildGun } from './gun.js';
+import { createBgm } from './bgm.js';
 
 const PI = Math.PI, TAU = PI * 2;
 const TABLE_R = 3.0, TABLE_Y = 0.8, SEAT_R = 4.7, GUN_R = 2.0, GUN_Y = 1.8;
@@ -89,6 +90,7 @@ function create() {
   const gun = buildGun();
   gun.root.rotation.order = 'YZX';   // y = 좌우로 돌리기(yaw), z = 위아래로 들기(pitch)
   scene.add(gun.root);
+  const bgm = createBgm();
   const spentMat = new THREE.MeshStandardMaterial({ color: 0x8a8a8a, roughness: 0.7 });
   const holeMat = gun.spentHoles[0].material;
 
@@ -267,6 +269,7 @@ function create() {
   async function runGame(token) {
     const alive = () => token === runToken;
     idleCam = false; wideShot();
+    bgm.start();
     ui.banner(`🔫 커피콩 1발 · ${CHAMBERS}칸 장난감 총`);
     await wait(1.6); if (!alive()) return;
 
@@ -280,6 +283,7 @@ function create() {
     for (const turn of plan.turns) {
       // 남은 칸이 줄수록 느려지고 심장 소리가 커진다 (f: 1 → 2)
       const f = 1 + (CHAMBERS - turn.left) / (CHAMBERS - 1);
+      bgm.setTension(f - 1);
       const S = seats[turn.shooter], T = seats[turn.target];
       hud({ ...turn, target: -1 });
       ui.banner(`${S.player.name} 차례 · 누구를 겨눌까?`);
@@ -297,6 +301,7 @@ function create() {
       tween(0.4, k => { focus = Math.max(focus, k); });
       T.tremble = 1;
       heart = { on: true, t: 0, gap: 0.85 - 0.3 * (f - 1), vol: 0.45 + 0.35 * (f - 1) };
+      bgm.duck(true);   // 음악이 잦아들고 심장 소리만 남는다
       playCall(T.animal.name, { vol: 0.5, pan: 0 });
       // 약실 돌리기 + 공이 젖히기
       sfx('cock', 0.9);
@@ -312,6 +317,7 @@ function create() {
       await tween(0.06, k => { gun.hammer.rotation.z = 0.7 * (1 - k); });
       if (!turn.fired) {
         sfx('click', 1);
+        bgm.duck(false);
         ui.pop('찰칵…');
         gun.spentHoles[(CHAMBERS - turn.left) % CHAMBERS].material = spentMat;
         hud({ ...turn, left: turn.left - 1 }, '휴~ 빈 칸!');
@@ -331,6 +337,7 @@ function create() {
   async function bang(S, T) {
     const token = runToken;
     sfx('bang', 1);
+    bgm.stop(0.05);   // 빵! 하는 순간 음악이 뚝 끊긴다
     ui.pop('빵!'); ui.flash();
     shake = 1; zoomFov = 0; heart.on = false;
     const origin = gun.muzzle.getWorldPosition(new THREE.Vector3());
@@ -385,6 +392,7 @@ function create() {
   }
   function stop() {
     runToken++; playing = false; idleCam = true;
+    bgm.stop();
     stopEffects(); clearSeats();
   }
 
