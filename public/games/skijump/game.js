@@ -10,7 +10,7 @@ import { PLAYER_COLORS } from '../../shared/roster.js';
 import { makeLabel, sizeLabels } from '../../shared/labels.js';
 import { makeExclaim, animateExclaim } from '../../shared/fx.js';
 import { ui } from '../../shared/ui.js';
-import { planSkiJump, flight, hillY, LIP_Y, HILL_LEN, OUTRUN_X } from './plan.js';
+import { planSkiJump, flight, hillY, TRICKS, HIGH_VY0, LIP_Y, HILL_LEN, OUTRUN_X } from './plan.js';
 import { createSkiAudio } from './sound.js';
 
 const PI = Math.PI;
@@ -121,18 +121,21 @@ function create() {
   const wait = d => tween(d, () => {});
 
   function makeJumper(p, i) {
-    const holder = new THREE.Group(), tilt = new THREE.Group(); holder.add(tilt);
+    // holder(위치) → tilt(내리막/비행 기울기) → spinner(공중 기술: 몸 가운데를 축으로 돈다) → body(모델+스키)
+    const holder = new THREE.Group(), tilt = new THREE.Group(), spinner = new THREE.Group(), body = new THREE.Group();
+    holder.add(tilt); tilt.add(spinner); spinner.add(body);
     const model = makeAnimal(p.animal), s = THREE.MathUtils.clamp(1.8 / model.height, 0.5, 1.2);
-    model.root.scale.setScalar(s); tilt.add(model.root);
+    model.root.scale.setScalar(s); body.add(model.root);
+    spinner.position.y = model.height * s / 2; body.position.y = -model.height * s / 2;
     const skiMat = new THREE.MeshStandardMaterial({ color: PLAYER_COLORS[i], roughness: 0.4 });
     for (const z of [-0.28, 0.28]) {
-      const ski = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.06, 0.16), skiMat); ski.position.set(0.3, 0.03, z); ski.castShadow = true; tilt.add(ski);
-      const tip = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.06, 0.16), skiMat); tip.position.set(1.65, 0.12, z); tip.rotation.z = 0.5; tilt.add(tip);
+      const ski = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.06, 0.16), skiMat); ski.position.set(0.3, 0.03, z); ski.castShadow = true; body.add(ski);
+      const tip = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.06, 0.16), skiMat); tip.position.set(1.65, 0.12, z); tip.rotation.z = 0.5; body.add(tip);
     }
     const ball = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), snow); ball.visible = false; ball.castShadow = true; holder.add(ball);
     const h = model.height * s, label = makeLabel(p.name, PLAYER_COLORS[i]); label.position.y = h + 1.0; holder.add(label);
     holder.visible = false; scene.add(holder);
-    return { player: p, animal: ANIMALS[p.animal], color: PLAYER_COLORS[i], holder, tilt, model, ball, label, h, dist: plan.dist[i], done: false, rank: 0, phase: Math.random() * 6, exclaim: null };
+    return { player: p, animal: ANIMALS[p.animal], color: PLAYER_COLORS[i], holder, tilt, spinner, model, trick: plan.trick[i], vy0: plan.vy0[i], ball, label, h, dist: plan.dist[i], done: false, rank: 0, phase: Math.random() * 6, exclaim: null };
   }
   function clearJumpers() { jumpers.forEach(j => disposeTree(j.holder)); jumpers = []; }
 
@@ -149,7 +152,7 @@ function create() {
   // 언덕 위 x에서 몸 기울기 (내리막 각도)
   const slopeAt = x => Math.atan2(hillY(x + 0.5) - hillY(x - 0.5), 1);
   // 착지 후 멈출 자리: 정리 구간에 나란히 선다
-  const stopX = k => OUTRUN_X - 8 + (k % 2) * 3, stopZ = k => -9 + k * 2.4;
+  const stopX = k => OUTRUN_X - 8 + (k % 2) * 3, stopZ = k => -6 + k * 2.4;   // 뒤에 뛴 사람일수록 카메라(+z) 쪽
 
   async function jump(j, k, alive) {
     active = j; j.holder.visible = true; j.label.visible = true;
@@ -170,20 +173,24 @@ function create() {
       j.model.animate(j.phase += 0.15, 0.15); sound.wind(k2);
     }); if (!alive()) return;
     // 3) 도약 + 비행: 처음 잠깐 슬로모션, 옆에서 본다
-    const f = flight(j.dist);
+    const f = flight(j.dist, j.vy0);
     sound.takeoff(); camMode = 'flight'; camRate = 3;
     playCall(j.animal.name, { vol: 0.5 });
+    if (j.vy0 >= HIGH_VY0 + 1.5) ui.banner(`🚀 ${j.player.name} 높이 솟구친다!`);
     timeRate = SLOW_RATE;
-    let slowDone = false;
+    let slowDone = false, called = false;
     await tween(f.T, kk => {
       const t = kk * f.T, [x, y] = f.pos(t), [x2, y2] = f.pos(Math.min(f.T, t + 0.05));
       j.holder.position.set(x, y, 0);
-      // 날아가는 방향 + 앞으로 숙인 자세 (V자 비행 느낌)
-      j.tilt.rotation.z = Math.atan2(y2 - y, x2 - x) * 0.6 - 0.25;
+      // 날아가는 방향으로 기울이고, V자 비행은 앞으로 더 숙인다
+      j.tilt.rotation.z = Math.atan2(y2 - y, x2 - x) * 0.6 - (j.trick === 'v' ? 0.3 : 0.1);
+      const u = trickPose(j, kk);
+      if (!called && u > 0) { called = true; ui.banner(`${TRICKS[j.trick].name}  ${j.player.name}`); sound.trick(); }
       if (!slowDone && t > SLOWMO) { slowDone = true; timeRate = 1; }   // 비행 처음 SLOWMO초만 느리게
       sound.wind(0.6 - 0.3 * kk);
     }); if (!alive()) return;
     timeRate = 1; sound.windOff(0.4);
+    j.spinner.rotation.set(0, 0, 0); j.spinner.scale.setScalar(1);
     // 4) 착지
     const stopAt = jumpers.filter(o => o.done).length;
     if (jumpers.indexOf(j) === plan.loser) await tumble(j, alive);
@@ -195,6 +202,26 @@ function create() {
     if (j.dist === best && jumpers.filter(o => o.done).length > 1) { ui.banner(`🏆 신기록! ${j.player.name} ${j.dist.toFixed(1)}m`); sound.record(); }
     hud();
     await wait(1.4);
+  }
+
+  // 공중 기술 자세: 비행의 15%~80% 구간에서 돌고, 착지 전에 바로 선다. 돌아간 정도(0..1)를 돌려준다
+  function trickPose(j, kk) {
+    const u = Math.min(1, Math.max(0, (kk - 0.15) / 0.65)), e = u < 0.5 ? 4 * u ** 3 : 1 - (-2 * u + 2) ** 3 / 2, r = j.spinner.rotation;
+    r.set(0, 0, 0); j.spinner.scale.setScalar(1);
+    switch (j.trick) {
+      case 'backflip': r.z = 2 * PI * e; break;              // 뒤로 한 바퀴 (머리가 위→뒤)
+      case 'frontflip': r.z = -2 * PI * e; break;            // 앞으로 한 바퀴
+      case 'doubleflip': r.z = 4 * PI * e; break;            // 뒤로 두 바퀴
+      case 'spin': r.y = 6 * PI * e; break;                  // 피겨처럼 제자리 세 바퀴
+      case 'cork': r.x = 2 * PI * e; r.y = Math.sin(PI * e) * 0.6; break;   // 나사처럼 옆으로 굴러 한 바퀴
+      case 'cheer': {                                        // 만세: 쭉 펴고 신나게 흔든다
+        const w = Math.sin(PI * u);
+        r.z = Math.sin(u * 30) * 0.35 * w; r.x = Math.sin(u * 22) * 0.25 * w;
+        j.spinner.scale.set(1 + 0.15 * w, 1 + 0.25 * w, 1 + 0.15 * w);
+        j.model.animate(j.phase += 0.35, w); break;
+      }
+    }
+    return u;
   }
 
   async function landWell(j, k, alive) {
@@ -215,7 +242,7 @@ function create() {
   // 꼴찌: 착지하다 넘어져 데굴데굴 구르며 눈덩이가 된다. 멈추면 눈덩이 위로 얼굴이 쏙
   async function tumble(j, alive) {
     sound.land(0); sound.tumble();
-    const x0 = j.dist, x1 = OUTRUN_X - 16, z1 = 8;   // 착지 구역을 비우고 정리 구간 옆으로 굴러간다
+    const x0 = j.dist, x1 = OUTRUN_X - 16, z1 = -12;   // 착지 구역을 비우고, 카메라 반대편(관중 쪽)으로 굴러간다
     j.ball.visible = true;
     await tween(2.2, kk => {
       const e = ease(kk), x = x0 + (x1 - x0) * e, r = 0.4 + 1.1 * Math.min(1, kk * 1.4);
@@ -301,7 +328,7 @@ function create() {
     } else if (camMode === 'inrun') {
       wantPos.copy(p).add(tmp.set(-6, 8, 4 * far)); wantLook.copy(p).add(tmp.set(9, -4, 0));   // 점프대 아래로 들어가지 않게 높이
     } else if (camMode === 'flight') {
-      wantPos.set(p.x + 2, p.y + 3, 24 * far); wantLook.set(p.x + 8, p.y - 4, 0);
+      wantPos.set(p.x + 1, p.y + 2, p.z + 13 * far); wantLook.set(p.x + 4, p.y - 1.5, p.z);   // 공중 기술이 잘 보이게 가까이, 옆에서 따라간다
     } else if (camMode === 'final') {
       wantPos.copy(p).add(tmp.set(-7, 4, 7 * far)); wantLook.copy(p).add(tmp.set(0, 1.8, 0));
     }

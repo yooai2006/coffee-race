@@ -21,12 +21,25 @@ export function hillY(x) {
 }
 
 // 거리 d에 착지하는 비행: 걸리는 시간 T와 가로 속도 vx. pos(t)로 위치를 얻는다
-export function flight(d) {
+// vy0: 처음 위로 뜨는 속도. 클수록 높이 솟구쳤다가 내려온다 (거리는 같다)
+export function flight(d, vy0 = FLIGHT_VY0) {
   const drop = LIP_Y - hillY(d);
-  const T = (FLIGHT_VY0 + Math.sqrt(FLIGHT_VY0 ** 2 + 2 * FLIGHT_G * drop)) / FLIGHT_G;
+  const T = (vy0 + Math.sqrt(vy0 ** 2 + 2 * FLIGHT_G * drop)) / FLIGHT_G;
   const vx = d / T;
-  return { T, vx, pos: t => [vx * t, LIP_Y + FLIGHT_VY0 * t - FLIGHT_G * t * t / 2] };
+  return { T, vx, pos: t => [vx * t, LIP_Y + vy0 * t - FLIGHT_G * t * t / 2] };
 }
+
+// 공중 기술. high: 높이 뜬 점프(vy0 >= HIGH_VY0)에서만 나온다
+export const TRICKS = {
+  v: { name: '✌️ V자 비행' },
+  backflip: { name: '🔄 백플립!' },
+  frontflip: { name: '🔃 프론트플립!' },
+  doubleflip: { name: '🔄🔄 더블 백플립!', high: true },
+  spin: { name: '⛸️ 트리플 스핀!' },
+  cork: { name: '🌀 콕스크류!' },
+  cheer: { name: '🙌 만세 점프!' },
+};
+export const VY0_MIN = 1.5, VY0_MAX = 9, HIGH_VY0 = 6;
 
 const half = x => Math.round(x * 2) / 2;
 
@@ -43,5 +56,14 @@ export function planSkiJump(n, rand = Math.random) {
   const others = [...Array(n).keys()].filter(i => i !== loser).sort(() => rand() - 0.5);
   const slot = n - 1 - Math.floor(rand() * Math.min(3, n));
   const order = [...others.slice(0, slot), loser, ...others.slice(slot)];
-  return { order, dist, loser };
+
+  // 점프마다 높이와 기술: 바로 앞 사람과 같은 기술은 피한다
+  const vy0 = Array(n).fill(0), trick = Array(n).fill('v');
+  let prev = '';
+  for (const i of order) {
+    vy0[i] = VY0_MIN + rand() * (VY0_MAX - VY0_MIN);
+    const ok = Object.keys(TRICKS).filter(k => k !== prev && (!TRICKS[k].high || vy0[i] >= HIGH_VY0));
+    trick[i] = prev = ok[Math.floor(rand() * ok.length)];
+  }
+  return { order, dist, loser, vy0, trick };
 }

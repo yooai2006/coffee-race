@@ -55,6 +55,11 @@ export function createSkiAudio() {
       crowd?.bus.to(0.12 + 0.35 * amount, 0.15);
       setTimeout(() => crowd?.bus.to(0.05, 1.5), 900);
     },
+    // 공중 기술: 휘익 + 관중 '오~'
+    trick() {
+      playVoices([{ wave: 'noise', dur: 0.6, filter: ['bandpass', [[0, 500], [0.5, 2600], [1, 900]], 2], gain: 0.3 }, { wave: 'sine', f: [[0, 500], [1, 1300]], dur: 0.4, gain: 0.08 }]);
+      crowd?.bus.to(0.2, 0.3); setTimeout(() => crowd?.bus.to(0.05, 1.2), 700);
+    },
     record() { playVoices([[0, 79], [0.1, 83], [0.2, 86], [0.3, 91]].map(([at, n]) => ({ at, wave: 'square', f: midi(n), dur: 0.22, filter: ['lowpass', 3500, 1], gain: 0.15 }))); },
     // 데굴데굴 + 관중 '어어~'
     tumble() {
