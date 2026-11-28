@@ -301,8 +301,17 @@ export function initSetup({ gameList, onStart, onGame }) {
   $('#nameInput').addEventListener('keydown', e => { if (e.key === 'Enter' && e.isComposing) e.preventDefault(); });
   $('#addDone').onclick = closeAdd;
   // 이름을 입력하는 동안(키보드가 올라와 화면이 좁을 때)은 동물 그리드와 아래 버튼을 숨긴다 (app.css body.typing)
-  $('#nameInput').addEventListener('focus', () => document.body.classList.add('typing'));
-  $('#nameInput').addEventListener('blur', () => document.body.classList.remove('typing'));
+  // 두 가지로 감지한다: 입력칸 포커스, 그리고 화면(visualViewport)이 키보드 때문에 크게 줄어든 것
+  const fullH = Math.max(innerHeight, screen.height * 0.6);
+  const syncTyping = () => {
+    const focused = document.activeElement === $('#nameInput');
+    const squeezed = (window.visualViewport?.height ?? innerHeight) < fullH * 0.72;
+    document.body.classList.toggle('typing', focused || (squeezed && !$('#addForm').classList.contains('hidden')));
+  };
+  $('#nameInput').addEventListener('focus', syncTyping);
+  $('#nameInput').addEventListener('blur', () => setTimeout(syncTyping, 50));
+  window.visualViewport?.addEventListener('resize', syncTyping);
+  addEventListener('resize', syncTyping);
   // [추가]·[완료]를 눌러도 입력칸 포커스를 잃지 않게: 누르는 순간 화면이 움직여 다른 곳이 눌리는 것도 막는다
   for (const b of ['#addBtn', '#addDone']) $(b).addEventListener('pointerdown', e => e.preventDefault());
   // 아직 안 고른 사람이 있으면 그 사람만 채우고(직접 고른 건 유지), 모두 정해졌으면 전원을 새로 섞는다
