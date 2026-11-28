@@ -35,8 +35,7 @@ public/                       ← 이 폴더를 그대로 배포 (빌드 단계 
   shared/                     모든 게임이 같이 쓰는 코드
     setup.js                  설정 화면 (1단계 게임 카드, 2단계 참가자 탭·동물 그리드·3D 미리보기)
     ui.js                     배너, 카운트다운, 섬광, 정보판, 결과 화면, 짧은 알림(toast)
-    animal-icons.js           동물 18종 2D 스티커 얼굴 (SVG, ANIMALS와 같은 순서)
-    game-art.js               게임 고르기 카드 그림 (SVG, 게임 id별)
+    animal-icons.js           2D 그림 경로: 동물 스티커(ANIMALS와 같은 순서), 게임 카드 그림(게임 id별)
     labels.js                 3D 이름표
     animals.js                동물 18종 3D 모델 (ANIMALS, makeAnimal)
     audio.js                  Web Audio 소리 엔진, 음소거 버튼
@@ -46,6 +45,9 @@ public/                       ← 이 폴더를 그대로 배포 (빌드 단계 
     roster.js                 참가자 목록 ↔ 주소창, 참가자 색, 최대 인원(8)
     base.css                  색·글꼴(Jua)·버튼·제목 스티커 등 공용 스타일
     util.js, three-utils.js
+  assets/                     2D 그림 (WebP)
+    characters/               동물 18종 스티커 얼굴 256×256, 투명 배경
+    game-cards/               게임 카드 그림 720×900
   games/
     registry.js               게임 목록 (첫 번째가 기본값)
     horse-race/               🏇 동물 레이스: game.js, track.js, race-plan.js, sound.js(음악·관중·발소리)
@@ -70,7 +72,7 @@ tests/                        Node 테스트 (three.js·DOM이 없는 순수 로
 3. 공용 기능은 `../../shared/...`에서 가져옵니다 (`ANIMALS`, `makeAnimal`, `playCall`, `playLoserCry`, `ui`, `makeLabel`, `PLAYER_COLORS`, `animalChip` 등).
    - 결과: `ui.showResult({ loser: { name, animal, color }, rows: [{ rank 또는 mark, name, animal, color, note, loser }] })`
    - 정보판: `ui.hud(제목, html, { ranked })`. 순위 줄은 `<div class="r"><b>1</b>${animalChip(animal, color)}이름</div>` 형식
-   - 게임 카드 그림은 `shared/game-art.js`의 `SCENES`에 게임 id로 추가합니다 (없으면 커피잔 그림).
+   - 게임 카드 그림은 `public/assets/game-cards/<이름>.webp`(720×900, 세로 4:5)로 넣고 `shared/animal-icons.js`의 `CARD_FILES`에 게임 id를 추가합니다 (없으면 게임 이모지).
 4. 결과를 정하는 로직은 DOM 없는 파일(`plan.js`처럼)로 나누고 `tests/`에 테스트를 넣습니다.
 5. 위 표에 게임을 추가합니다.
 

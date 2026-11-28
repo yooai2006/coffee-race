@@ -6,8 +6,7 @@ import * as THREE from 'three';
 import { $, esc, shuffle } from './util.js';
 import { disposeTree } from './three-utils.js';
 import { ANIMALS, makeAnimal } from './animals.js';
-import { animalSvg, animalChip } from './animal-icons.js';
-import { gameArt } from './game-art.js';
+import { animalImg, animalChip, gameCardImg } from './animal-icons.js';
 import { playCall } from './animal-sounds.js';
 import { ui } from './ui.js';
 import { MAX_PLAYERS, PLAYER_COLORS, splitNames, addPlayers, loadRosterFromUrl, saveRosterToUrl } from './roster.js';
@@ -92,7 +91,7 @@ function buildCards() {
   const box = cardsBox(); box.innerHTML = '';
   $('#dots').innerHTML = '';
   games.forEach((g, i) => {
-    const c = el('button', 'gcard tap', `<div class="gtitle">${g.title}</div><div class="gartBox">${gameArt(g.id)}</div><div class="gtime">⏱ <span></span></div><p class="grule">${g.rule}</p>`);
+    const c = el('button', 'gcard tap', `<div class="gtitle">${g.title}</div><div class="gartBox">${gameCardImg(g.id) || `<span class="gemoji">${g.emoji}</span>`}<div class="gtime">⏱ <span></span></div></div><p class="grule">${g.rule}</p>`);
     c.setAttribute('role', 'option');
     c.setAttribute('aria-label', g.title);
     // 가운데 카드를 누르면 다음 단계, 옆 카드를 누르면 그 카드로 넘긴다
@@ -155,7 +154,7 @@ function renderStep1() {
 function buildGrid() {
   const grid = $('#animalGrid'); grid.innerHTML = '';
   ANIMALS.forEach((a, hi) => {
-    const t = el('button', 'tile', `${animalSvg(hi)}<span class="tname">${a.name}</span><span class="owner hidden"></span>`);
+    const t = el('button', 'tile', `${animalImg(hi)}<span class="tname">${a.name}</span><span class="owner hidden"></span>`);
     t.setAttribute('aria-label', a.name);
     t.onclick = () => pickAnimal(hi);
     t.onpointerenter = e => { if (e.pointerType === 'mouse') renderPreviewText(hi); };

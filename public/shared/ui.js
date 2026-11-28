@@ -1,7 +1,7 @@
 // 모든 게임이 같이 쓰는 화면 요소: 배너, 큰 글자(카운트다운), 섬광, 상단 정보판(HUD), 결과 화면, 짧은 알림
 import { $, esc, sleep } from './util.js';
 import { beep } from './audio.js';
-import { animalSvg, animalChip } from './animal-icons.js';
+import { animalImg, animalChip } from './animal-icons.js';
 
 // 결과 화면의 큰 커피잔
 const CUP = `<svg class="cupBig" viewBox="0 0 100 100" aria-hidden="true"><g stroke="#3b2c52" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
@@ -65,7 +65,7 @@ export const ui = {
   // rows: 위에서부터 보여 줄 줄 [{ rank(숫자) 또는 mark(이모지), name, animal, color, note, loser }]
   showResult({ loser, rows }) {
     $('#resultTitle').textContent = ui.gameTitle ? `${ui.gameTitle} 결과` : '결과';
-    $('#resultHero').innerHTML = `${CUP}<div class="who"><div class="lbl">오늘의 커피는</div><div class="nm">${esc(loser.name)}</div></div>${animalSvg(loser.animal)}`;
+    $('#resultHero').innerHTML = `${CUP}<div class="who"><div class="lbl">오늘의 커피는</div><div class="nm">${esc(loser.name)}</div></div>${animalImg(loser.animal)}`;
     $('#resultList').innerHTML = rows.map(r => `
       <li class="${r.rank && r.rank <= 3 ? `r${r.rank}` : ''}${r.loser ? ' loser' : ''}">
         <span class="rk">${r.rank ?? r.mark ?? ''}</span>${animalChip(r.animal, r.color)}

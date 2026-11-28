@@ -38,11 +38,17 @@
 .gcard:nth-child(3n) { background: #ffe9f0; }
 .gtitle { font-family: var(--font-fun); font-size: 28px; line-height: 1.1; white-space: nowrap;
   background: linear-gradient(transparent 72%, var(--pink) 72%, var(--pink) 90%, transparent 90%); padding: 0 4px; }
-.gartBox { width: 100%; aspect-ratio: 300 / 210; flex: none; border-radius: 18px; overflow: hidden; border: 3px solid var(--ink); background: #fff; }
+/* 카드 그림은 세로 4:5. 화면이 낮으면 줄어들고 그림은 잘라서 채운다 */
+.gartBox { position: relative; width: 100%; aspect-ratio: 4 / 5; flex: 0 1 auto; min-height: 0; border-radius: 18px; overflow: hidden;
+  border: 3px solid var(--ink); background: #fff3c4; display: grid; place-items: center; }
+.gart { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; user-select: none; }
+.gemoji { font-size: 72px; }
 .grule { margin: 0; font-size: 14px; line-height: 1.55; text-align: center; color: var(--ink); min-height: 0; overflow: hidden;
-  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; flex: none; }
 .gart { width: 100%; height: 100%; display: block; }
-.gtime { font-family: var(--font-fun); font-size: 17px; background: var(--paper); border: 2.5px solid var(--ink); border-radius: 999px; padding: 4px 14px 2px; }
+.gtime { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); white-space: nowrap;
+  font-family: var(--font-fun); font-size: 17px; background: var(--paper); border: 2.5px solid var(--ink); border-radius: 999px; padding: 4px 14px 2px;
+  box-shadow: 0 3px 0 var(--ink); }
 .arrow { position: absolute; top: 50%; z-index: 2; width: 44px; height: 44px; margin-top: -22px; padding: 0 0 3px;
   background: var(--paper); border: 3px solid var(--ink); border-radius: 50%; box-shadow: 0 3px 0 var(--ink);
   font-family: var(--font-fun); font-size: 28px; line-height: 1; }
@@ -85,7 +91,7 @@
 #pvOwner { font-size: 14px; color: var(--ink-soft); margin-top: 2px; min-height: 18px; }
 .agrid { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 4px; padding: 10px 0 8px; align-content: start; overscroll-behavior: contain; }
 .tile { position: relative; display: flex; flex-direction: column; align-items: center; padding: 6px 2px 6px; background: none; border-radius: 18px; transition: background .15s; }
-.tile .ani { width: 100%; max-width: 78px; aspect-ratio: 1; transition: transform .12s, opacity .2s; overflow: visible; }
+.tile .ani { width: 100%; max-width: 78px; height: auto; aspect-ratio: 1; transition: transform .12s, opacity .2s; user-select: none; }
 .tile:active .ani { transform: scale(.9); }
 .tname { font-family: var(--font-fun); font-size: 14px; line-height: 1.2; margin-top: 2px; white-space: nowrap; }
 .tile.sel { background: #efe7ff; box-shadow: inset 0 0 0 3px var(--purple); }
@@ -118,7 +124,7 @@
 /* 순위 목록이 아닌 정보판 (룰렛, 폭탄, 젠가): 종이 카드 한 장 */
 #hud .box { background: rgba(255,253,248,.95); border-radius: 16px; padding: 10px 14px; box-shadow: 0 3px 0 rgba(59,44,82,.22); font-weight: 700; font-size: 14px; }
 .achip { display: inline-grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2.5px var(--c); overflow: hidden; }
-.achip .ani { width: 118%; height: 118%; }
+.achip .ani { width: 112%; height: 112%; object-fit: contain; }
 
 /* ── 러시안 룰렛·폭탄·젠가 정보판 내용 ── */
 #hud .chambers { display: flex; gap: 5px; margin: 2px 0 6px; }
@@ -141,7 +147,7 @@
 .hero .lbl { font-family: var(--font-fun); font-size: 16px; color: var(--ink-soft); }
 .hero .nm { font-family: var(--font-fun); font-size: 44px; line-height: 1.15; overflow-wrap: anywhere;
   background: linear-gradient(transparent 70%, var(--pink) 70%, var(--pink) 88%, transparent 88%); display: inline; padding: 0 4px; }
-.hero .ani { width: 72px; height: 72px; flex: none; }
+.hero .ani { width: 80px; height: 80px; flex: none; transform: rotate(6deg); }
 @keyframes heroIn { 0% { transform: scale(.6) rotate(-8deg); opacity: 0; } 100% { transform: scale(1) rotate(-1.5deg); opacity: 1; } }
 .ranks { list-style: none; margin: 0; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--paper); border-radius: 22px;
   box-shadow: 0 5px 0 rgba(59,44,82,.16); }
