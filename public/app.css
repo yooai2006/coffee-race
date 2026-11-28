@@ -2,7 +2,7 @@
    폰 세로 화면이 기준이다. 넓은 화면에서는 가운데에 폰 크기 카드로 보여 준다. */
 
 /* ── 전체 화면 (설정, 결과) ── */
-.screen { position: fixed; inset: 0; z-index: 10; display: flex; justify-content: center; align-items: center;
+.screen { position: fixed; inset: 0; z-index: 10; display: flex; justify-content: center; align-items: center; overflow: hidden;
   background: var(--bg) radial-gradient(rgba(255,255,255,.22) 1.2px, transparent 1.6px) 0 0 / 18px 18px; }
 .step, .resultBody { position: relative; width: 100%; max-width: 480px; height: 100%; display: flex; flex-direction: column;
   padding: calc(14px + var(--safe-t)) 16px calc(16px + var(--safe-b)); }
@@ -137,8 +137,9 @@
 #hud .note { margin-top: 4px; color: #2b8a3e; font-weight: 800; }
 
 /* ── 결과 화면 ── */
-#result { z-index: 11; overflow-y: auto; align-items: flex-start; background-color: rgba(198,178,244,.96); }
-#result .resultBody { height: auto; min-height: 100%; }
+/* 위아래로만 스크롤한다. 모서리 테이프 장식이 화면 밖으로 나가서 좌우로 밀리지 않게 막는다 */
+#result { z-index: 11; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; align-items: flex-start; background-color: rgba(198,178,244,.96); }
+#result .resultBody { height: auto; min-height: 100%; overflow-x: hidden; overflow-x: clip; }   /* 테이프 장식을 이 안에서 자른다 */
 .hero { position: relative; flex: none; display: flex; align-items: center; gap: 12px; margin: 14px 4px 20px; padding: 16px 16px 14px;
   background: var(--yellow); border-radius: 22px; transform: rotate(-1.5deg); box-shadow: 0 6px 0 rgba(59,44,82,.2), 0 14px 30px rgba(59,44,82,.16);
   animation: heroIn .55s cubic-bezier(.3,1.6,.5,1) both; }
