@@ -84,6 +84,26 @@ function create() {
       const p = pts[i], hgt = p.y + 30;
       for (const z of [-1.4, 1.4]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.5, hgt, 0.5), steel); leg.position.set(p.x, p.y - hgt / 2 - 0.1, z); leg.castShadow = true; scene.add(leg); }
     }
+    // 출발대: 점프대 맨 위가 공중에서 끊기지 않게 평평한 데크, 출발 오두막, 출발 게이트, 난간, 굵은 기둥을 붙인다
+    const top = pts[0], DECK_L = 10, deckX = top.x - DECK_L / 2, deckY = top.y - 0.05;
+    const add = (geo, mat, x, y, z, shadow = true) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = shadow; m.receiveShadow = true; scene.add(m); return m; };
+    add(new THREE.BoxGeometry(DECK_L, 0.6, 7), new THREE.MeshStandardMaterial({ color: 0xe8f1ff, roughness: 0.6 }), deckX, deckY - 0.3, 0);
+    add(new THREE.BoxGeometry(DECK_L + 0.4, 0.25, 7.4), steel, deckX, deckY - 0.7, 0);
+    for (const z of [-3.4, 3.4]) {   // 데크 양옆 난간
+      add(new THREE.BoxGeometry(DECK_L, 0.12, 0.12), railMat, deckX, deckY + 1.0, z);
+      for (let x = top.x - DECK_L; x <= top.x + 0.01; x += 2.5) add(new THREE.BoxGeometry(0.1, 1.0, 0.1), railMat, x, deckY + 0.5, z);
+    }
+    const hut = new THREE.MeshStandardMaterial({ color: 0xfff4e0, roughness: 0.8 }), roof = new THREE.MeshStandardMaterial({ color: 0xc62828, roughness: 0.6 });
+    add(new THREE.BoxGeometry(3.6, 3.4, 5), hut, top.x - DECK_L + 2.2, deckY + 1.7, 0);
+    const r = add(new THREE.ConeGeometry(3.6, 1.8, 4), roof, top.x - DECK_L + 2.2, deckY + 4.3, 0); r.rotation.y = PI / 4;
+    add(new THREE.BoxGeometry(0.1, 1.4, 1.6), new THREE.MeshStandardMaterial({ color: 0x8ec9ff, roughness: 0.2 }), top.x - DECK_L + 4.05, deckY + 2.0, 0, false);   // 창문
+    // 출발 게이트: 두 기둥 + 가로 막대
+    for (const z of [-1.9, 1.9]) add(new THREE.CylinderGeometry(0.1, 0.1, 1.6, 8), railMat, top.x - 1.2, deckY + 0.8, z);
+    const bar = add(new THREE.CylinderGeometry(0.07, 0.07, 3.8, 8), new THREE.MeshStandardMaterial({ color: 0xfdd835, roughness: 0.4 }), top.x - 1.2, deckY + 0.55, 0);
+    bar.rotation.x = PI / 2;
+    // 출발대 기둥 (다른 기둥처럼 땅 아래까지)
+    const hgt = deckY + 30;
+    for (const x of [top.x - DECK_L + 0.6, top.x - 0.6]) for (const z of [-3, 3]) add(new THREE.BoxGeometry(0.8, hgt, 0.8), steel, x, deckY - 0.8 - hgt / 2, z);
   }
   // ── 정리 구간 관중, 나무, 먼 산 ──
   {
