@@ -81,7 +81,7 @@
   background: var(--paper); border: 3px solid var(--ink); border-radius: 14px; outline: none; }
 .addForm input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139,107,232,.3); }
 
-.paper { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--paper); border-radius: 24px; padding: 10px 10px 4px;
+.paper { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; background: var(--paper); border-radius: 24px; padding: 10px 10px 4px;
   box-shadow: 0 5px 0 rgba(59,44,82,.16), 0 12px 28px rgba(59,44,82,.12); }
 .pvRow { flex: none; display: flex; align-items: center; gap: 10px; padding: 0 6px 8px; border-bottom: 2.5px dashed #e3daf5; }
 #pv { width: 84px; height: 84px; flex: none; border-radius: 50%; background: radial-gradient(circle at 50% 70%, #d9f1c9 0 55%, #eef8e6 56%); }
@@ -103,6 +103,8 @@
 .tile .owner { position: absolute; top: 44%; left: 50%; transform: translate(-50%, -50%); max-width: 92%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   background: var(--ink-soft); color: #fff; font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
 @keyframes hop { 0% { transform: scale(.85); } 50% { transform: scale(1.1) translateY(-4px); } 100% { transform: scale(1); } }
+/* 이름 입력 중: 키보드가 화면을 가리므로 입력에 필요한 것만 남긴다 */
+body.typing #step2 .paper, body.typing #step2 .bar { display: none; }
 #hint { margin: 0; min-height: 20px; text-align: center; font-size: 15px; font-weight: 700; color: var(--ink); }
 .two { display: grid; grid-template-columns: 1fr 1.3fr; gap: 12px; }
 

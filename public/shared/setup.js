@@ -216,7 +216,7 @@ function openAdd() {
   adding = true; renderSetup();
   $('#nameInput').focus();
 }
-function closeAdd() { adding = false; renderSetup(); }
+function closeAdd() { adding = false; $('#nameInput').blur(); renderSetup(); }
 
 function addFromInput() {
   const names = splitNames($('#nameInput').value);
@@ -300,6 +300,11 @@ export function initSetup({ gameList, onStart, onGame }) {
   // 한글 입력 중 Enter는 글자를 확정하는 키라서 추가하지 않는다
   $('#nameInput').addEventListener('keydown', e => { if (e.key === 'Enter' && e.isComposing) e.preventDefault(); });
   $('#addDone').onclick = closeAdd;
+  // 이름을 입력하는 동안(키보드가 올라와 화면이 좁을 때)은 동물 그리드와 아래 버튼을 숨긴다 (app.css body.typing)
+  $('#nameInput').addEventListener('focus', () => document.body.classList.add('typing'));
+  $('#nameInput').addEventListener('blur', () => document.body.classList.remove('typing'));
+  // [추가]·[완료]를 눌러도 입력칸 포커스를 잃지 않게: 누르는 순간 화면이 움직여 다른 곳이 눌리는 것도 막는다
+  for (const b of ['#addBtn', '#addDone']) $(b).addEventListener('pointerdown', e => e.preventDefault());
   // 아직 안 고른 사람이 있으면 그 사람만 채우고(직접 고른 건 유지), 모두 정해졌으면 전원을 새로 섞는다
   $('#randBtn').onclick = () => {
     const allSet = players.length > 0 && players.every(p => p.animal !== null);
