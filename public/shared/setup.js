@@ -168,6 +168,8 @@ function pickAnimal(hi) {
   if (!p) { ui.toast('먼저 참가자 이름을 넣어 주세요'); openAdd(); return; }
   const owner = players.find(q => q !== p && q.animal === hi);
   if (owner) { ui.toast(`이미 ${owner.name}의 동물이에요`); return; }
+  // 동물을 고르기 시작하면 이름 입력은 끝난 것으로 본다
+  if (adding && players.length) { adding = false; $('#nameInput').blur(); }
   if (p.animal === hi) { p.animal = null; renderSetup(); return; }
   p.animal = hi;
   playCall(ANIMALS[hi].name, { vol: 0.8 });
@@ -301,12 +303,16 @@ export function initSetup({ gameList, onStart, onGame }) {
   $('#nameInput').addEventListener('keydown', e => { if (e.key === 'Enter' && e.isComposing) e.preventDefault(); });
   $('#addDone').onclick = closeAdd;
   // 이름을 입력하는 동안(키보드가 올라와 화면이 좁을 때)은 동물 그리드와 아래 버튼을 숨긴다 (app.css body.typing)
-  // 두 가지로 감지한다: 입력칸 포커스, 그리고 화면(visualViewport)이 키보드 때문에 크게 줄어든 것
-  const fullH = Math.max(innerHeight, screen.height * 0.6);
+  // 키보드가 실제로 올라와 화면이 줄었을 때만 숨긴다: 입력칸이 선택돼 있고 + 화면 높이가 평소의 75% 아래.
+  // (포커스만으로 숨기면 키보드를 내린 뒤에도 입력칸이 선택된 채 남아 동물 화면이 사라진다)
+  // 평소 높이는 입력칸이 선택되지 않았을 때(키보드가 없을 때) 잰다. 화면을 돌려도 다시 잰다.
+  const viewH = () => window.visualViewport?.height ?? innerHeight;
+  let fullH = viewH();
   const syncTyping = () => {
-    const focused = document.activeElement === $('#nameInput');
-    const squeezed = (window.visualViewport?.height ?? innerHeight) < fullH * 0.72;
-    document.body.classList.toggle('typing', focused || (squeezed && !$('#addForm').classList.contains('hidden')));
+    const focused = document.activeElement === $('#nameInput'), h = viewH();
+    if (!focused) fullH = h;
+    const keyboardUp = focused && h < fullH * 0.75;
+    document.body.classList.toggle('typing', keyboardUp && !$('#addForm').classList.contains('hidden'));
   };
   $('#nameInput').addEventListener('focus', syncTyping);
   $('#nameInput').addEventListener('blur', () => setTimeout(syncTyping, 50));
