@@ -164,14 +164,11 @@ function create() {
     phase = 'result';
     const L = seats[plan.loser], order = [L, ...seats.filter(s => s !== L)];
     ui.showResult({
-      title: `☕ 오늘의 커피는 ${L.player.name}!`,
-      head: ['', '참가자', '동물', '기록'],
-      rows: order.map(st => [
-        st === L ? '💥' : '😮‍💨',
-        esc(st.player.name),
-        `<span class="dot" style="background:${st.color}"></span>${st.animal.name}`,
-        st === L ? '폭탄을 든 채 펑!' : st.catches ? `${st.catches}번 받고 넘김` : seats.indexOf(st) === plan.start ? '처음 들고 시작' : '한 번도 안 받음',
-      ]),
+      loser: { name: L.player.name, animal: L.player.animal, color: L.color },
+      rows: order.map(st => ({
+        mark: st === L ? '💥' : '😮‍💨', name: st.player.name, animal: st.player.animal, color: st.color, loser: st === L,
+        note: `${st.animal.name} · ${st === L ? '폭탄을 든 채 펑!' : st.catches ? `${st.catches}번 받고 넘김` : seats.indexOf(st) === plan.start ? '처음 들고 시작' : '한 번도 안 받음'}`,
+      })),
     });
   }
 

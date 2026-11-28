@@ -1,45 +1,83 @@
-/* 모든 게임이 같이 쓰는 기본 스타일: 패널, 버튼, 카운트다운, 배너, 소리 버튼, 섬광 */
-* { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: #1b2a1b;
-  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; color: #1d1d1f; }
+/* 모든 게임이 같이 쓰는 기본 스타일: 색, 글꼴, 버튼, 제목 스티커, 카운트다운, 배너, 소리 버튼, 섬광, 토스트
+   캐주얼 게임 스타일: 보라색 종이 + 흰 스티커 + 노란 버튼. 잉크색 외곽선과 아래 그림자로 눌리는 느낌을 준다. */
+:root {
+  --bg: #c6b2f4; --bg-deep: #a98ee8; --ink: #3b2c52; --ink-soft: #6b5c85;
+  --paper: #fffdf8; --paper-2: #f4efff; --yellow: #ffd84d; --yellow-deep: #ffc21a;
+  --pink: #ff7aa8; --purple: #8b6be8; --gold: #ffd84d; --silver: #dfe3ea; --bronze: #ffb58a;
+  --font-fun: "Jua", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; color: var(--ink); }
 canvas { display: block; }
 .hidden { display: none !important; }
+.defs { position: absolute; width: 0; height: 0; }
 
-.panel { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: min(720px, 94vw); max-height: 90vh; overflow: auto; z-index: 10;
-  background: rgba(255,255,255,0.94); border-radius: 18px; padding: 24px 26px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.35); backdrop-filter: blur(8px); }
-.panel.wide { width: min(1000px, 96vw); }
-.panel h1 { margin: 0 0 4px; font-size: 26px; }
-.panel .sub { margin: 0 0 18px; color: #555; font-size: 14px; }
+/* ── 버튼: 잉크 테두리 + 아래 그림자. 누르면 내려간다 ── */
+button { font: inherit; cursor: pointer; border: none; border-radius: 12px; color: inherit; touch-action: manipulation; }
+.btn { position: relative; font-family: var(--font-fun); color: var(--ink); background: var(--paper);
+  border: 3px solid var(--ink); border-radius: 999px; box-shadow: 0 5px 0 var(--ink);
+  padding: 10px 18px; font-size: 17px; transition: transform .08s, box-shadow .08s, background .15s; }
+.btn.big { min-height: 58px; font-size: 22px; letter-spacing: 0.04em; width: 100%; }
+.btn.small { min-height: 44px; padding: 6px 14px; font-size: 16px; box-shadow: 0 3px 0 var(--ink); }
+.btn.yellow { background: var(--yellow); }
+.btn.white { background: var(--paper); }
+.btn:active:not(:disabled), .btn.pressed { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.btn:disabled { background: #e4def0; color: #a59cb8; border-color: #b5abc8; box-shadow: 0 5px 0 #b5abc8; cursor: not-allowed; }
+.btn:disabled.spark::after { display: none; }
+:focus-visible { outline: 3px solid var(--pink); outline-offset: 3px; }
 
-button { font: inherit; cursor: pointer; border: none; border-radius: 10px; }
-.btn { padding: 10px 16px; background: #2f7d32; color: #fff; font-weight: 700; }
-.btn.ghost { background: #eef3ee; color: #2f5d31; }
-.btn:disabled { background: #bbb; cursor: not-allowed; }
+/* 노란 반짝 줄 장식 (제목·주요 버튼 오른쪽 위) */
+.spark { position: relative; }
+.spark::after { content: ""; position: absolute; top: -18px; right: -20px; width: 34px; height: 34px; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg stroke='%23ffc21a' stroke-width='5' stroke-linecap='round'%3E%3Cpath d='M6 30 L15 23 M18 12 L21 3 M27 26 L37 22'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat; }
+.btn.spark::after { top: -20px; right: 6px; }
+
+/* 흰 종이 제목 스티커 */
+.title, .sticker { font-family: var(--font-fun); font-weight: 400; color: var(--ink); background: var(--paper);
+  display: inline-block; margin: 0; padding: 6px 18px 4px; border-radius: 14px; transform: rotate(-2deg);
+  box-shadow: 0 4px 0 rgba(59,44,82,.14), 0 10px 24px rgba(59,44,82,.12); }
+.title { font-size: 32px; line-height: 1.2; }
 
 #countdown { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 6;
-  pointer-events: none; font-size: 140px; font-weight: 900; color: #fff; text-shadow: 0 6px 30px rgba(0,0,0,0.5); }
+  pointer-events: none; font-family: var(--font-fun); font-size: 140px; color: var(--yellow);
+  -webkit-text-stroke: 6px var(--ink); paint-order: stroke fill; text-shadow: 0 8px 0 var(--ink); }
 #countdown.pop { animation: pop 0.8s ease-out forwards; }
 #countdown.mid { font-size: 96px; }
 #countdown.mid.pop { animation-duration: 1.4s; }
 @keyframes pop { 0% { transform: scale(2); opacity: 0; } 25% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.8); opacity: 0; } }
 
-#banner { position: fixed; top: 22px; left: 50%; transform: translateX(-50%); z-index: 6; pointer-events: none;
-  background: rgba(0,0,0,0.6); color: #fff; padding: 10px 22px; border-radius: 999px; font-size: 22px; font-weight: 800;
+#banner { position: fixed; top: calc(16px + var(--safe-t)); left: 50%; transform: translateX(-50%) rotate(-1.5deg); z-index: 6; pointer-events: none;
+  background: var(--paper); color: var(--ink); padding: 8px 22px 6px; border-radius: 16px; border: 3px solid var(--ink);
+  box-shadow: 0 5px 0 var(--ink); font-family: var(--font-fun); font-size: 22px;
   opacity: 0; transition: opacity 0.3s; white-space: nowrap; }
 #banner.show { opacity: 1; }
-#muteBtn { position: fixed; top: 10px; right: 10px; z-index: 12; width: 42px; height: 42px; border-radius: 50%;
-  background: rgba(0,0,0,0.5); color: #fff; font-size: 20px; line-height: 42px; padding: 0; }
+#muteBtn { position: fixed; top: calc(10px + var(--safe-t)); right: 10px; z-index: 12; width: 48px; height: 48px; border-radius: 14px;
+  background: var(--paper); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); font-size: 21px; line-height: 1; padding: 0;
+  transition: transform .08s, box-shadow .08s; }
+body.in-setup #muteBtn { display: none; }   /* 설정 화면 오른쪽 위는 공유 버튼 자리 */
+#muteBtn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
 #flash { position: fixed; inset: 0; background: #fff; z-index: 7; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
 #flash.on { opacity: 1; transition: none; }
 
+/* 짧은 알림 (링크 복사, 이미 고른 동물 등) */
+#toast { position: fixed; left: 50%; bottom: calc(140px + var(--safe-b)); z-index: 30; pointer-events: none;
+  transform: translate(-50%, 10px); opacity: 0; transition: opacity .2s, transform .2s;
+  background: var(--ink); color: #fff; font-family: var(--font-fun); font-size: 17px; padding: 10px 18px; border-radius: 999px;
+  max-width: 90vw; text-align: center; }
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+
 /* ── 모바일: 기본 규칙을 덮어써야 하므로 반드시 맨 끝 ── */
 @media (max-width: 600px) {
-  .panel { padding: 16px 14px; border-radius: 14px; max-height: 94vh; }
-  .panel h1 { font-size: 21px; }
-  .panel .sub { font-size: 13px; margin-bottom: 12px; }
-  #banner { top: auto; bottom: 26px; font-size: 17px; white-space: normal; text-align: center; width: max-content; max-width: 92vw; border-radius: 16px; }
+  #banner { top: auto; bottom: calc(24px + var(--safe-b)); font-size: 18px; white-space: normal; text-align: center; width: max-content; max-width: 92vw; }
   #countdown { font-size: 110px; }
   #countdown.mid { font-size: 64px; }
+}
+
+/* 기기에서 '동작 줄이기'를 켜면 흔들림·튀어나오기 효과를 끈다 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  #countdown.pop { animation: fade 0.8s linear forwards !important; }
+  @keyframes fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 }

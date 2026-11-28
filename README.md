@@ -6,7 +6,12 @@
 
 ## 게임
 
-첫 화면에서 참가자와 동물을 고른 뒤 게임을 고릅니다. 기본값은 동물 레이스입니다.
+두 단계로 시작합니다. 기본값은 동물 레이스입니다.
+
+1. **게임 고르기**: 게임 카드를 좌우로 넘겨 고르고 [다음]을 누릅니다.
+2. **동물 고르기**: 위쪽 ＋ 탭으로 참가자를 넣고, 아래 그리드에서 동물을 고릅니다. 고르면 다음 사람 탭으로 자동으로 넘어갑니다. [랜덤 배정]으로 한 번에 정할 수도 있습니다.
+
+결과 화면의 [한 판 더]는 같은 멤버·같은 게임으로 바로 다시 하고, [게임 바꾸기]는 멤버를 그대로 두고 1단계로 갑니다.
 
 | 게임 | 규칙 |
 |---|---|
@@ -18,18 +23,20 @@
 | 🪵 젠가 | 둥근 탁자에 둘러앉아 자리 순서대로 블록을 하나씩 빼서 맨 위에 올립니다. 탑을 무너뜨린 동물의 주인이 커피를 삽니다. 모두 최소 한 번은 안전하게 빼고, 무너뜨릴 확률은 모두 같습니다. |
 
 - 결과는 모두 **시작하는 순간** 정해지고, 화면은 그 결과를 연출합니다.
-- 주소에 참가자와 게임이 저장됩니다: `?p=민수:고양이,영희:호랑이&g=roulette` (`g`가 없으면 동물 레이스). 링크를 공유하면 같은 멤버, 같은 게임으로 바로 시작합니다.
+- 주소에 참가자와 게임이 저장됩니다: `?p=민수:고양이,영희:호랑이&g=roulette` (`g`가 없으면 동물 레이스). 링크를 공유하면 같은 멤버, 같은 게임으로 2단계(동물 고르기)에서 바로 시작합니다. 2단계 오른쪽 위 🔗 버튼이 링크를 복사합니다.
 - 예전 주소 `/games/horse-race/`는 첫 화면으로 넘어갑니다.
 
 ## 폴더 구조
 
 ```
 public/                       ← 이 폴더를 그대로 배포 (빌드 단계 없음)
-  index.html, app.css         한 페이지 앱: 설정 화면, 정보판, 결과표
+  index.html, app.css         한 페이지 앱: 설정 1·2단계, 정보판, 결과 화면 (캐주얼 게임 스타일, 폰 세로 화면 기준)
   app.js                      렌더러와 매 프레임 루프, 게임 바꾸기 (게임 모듈 형식 설명이 맨 위에 있음)
   shared/                     모든 게임이 같이 쓰는 코드
-    setup.js                  설정 화면 (게임 고르기, 참가자, 동물 고르기, 미리보기)
-    ui.js                     배너, 카운트다운, 섬광, 정보판, 결과표
+    setup.js                  설정 화면 (1단계 게임 카드, 2단계 참가자 탭·동물 그리드·3D 미리보기)
+    ui.js                     배너, 카운트다운, 섬광, 정보판, 결과 화면, 짧은 알림(toast)
+    animal-icons.js           동물 18종 2D 스티커 얼굴 (SVG, ANIMALS와 같은 순서)
+    game-art.js               게임 고르기 카드 그림 (SVG, 게임 id별)
     labels.js                 3D 이름표
     animals.js                동물 18종 3D 모델 (ANIMALS, makeAnimal)
     audio.js                  Web Audio 소리 엔진, 음소거 버튼
@@ -37,7 +44,8 @@ public/                       ← 이 폴더를 그대로 배포 (빌드 단계 
     music.js                  배경 음악 도구 (음 예약, 박자 반복기, 음량 버스)
     fx.js                     커피콩·색종이 폭죽, 깜짝 놀란 '!!'
     roster.js                 참가자 목록 ↔ 주소창, 참가자 색, 최대 인원(8)
-    base.css, util.js, three-utils.js
+    base.css                  색·글꼴(Jua)·버튼·제목 스티커 등 공용 스타일
+    util.js, three-utils.js
   games/
     registry.js               게임 목록 (첫 번째가 기본값)
     horse-race/               🏇 동물 레이스: game.js, track.js, race-plan.js, sound.js(음악·관중·발소리)
@@ -59,7 +67,10 @@ tests/                        Node 테스트 (three.js·DOM이 없는 순수 로
    // create()는 { scene, camera, start(players), stop(), update(dt, time), resize() }를 돌려준다
    ```
 2. `public/games/registry.js`의 `GAMES`에 추가합니다. 설정 화면에 버튼이 생깁니다.
-3. 공용 기능은 `../../shared/...`에서 가져옵니다 (`ANIMALS`, `makeAnimal`, `playCall`, `playLoserCry`, `ui`, `makeLabel`, `PLAYER_COLORS` 등).
+3. 공용 기능은 `../../shared/...`에서 가져옵니다 (`ANIMALS`, `makeAnimal`, `playCall`, `playLoserCry`, `ui`, `makeLabel`, `PLAYER_COLORS`, `animalChip` 등).
+   - 결과: `ui.showResult({ loser: { name, animal, color }, rows: [{ rank 또는 mark, name, animal, color, note, loser }] })`
+   - 정보판: `ui.hud(제목, html, { ranked })`. 순위 줄은 `<div class="r"><b>1</b>${animalChip(animal, color)}이름</div>` 형식
+   - 게임 카드 그림은 `shared/game-art.js`의 `SCENES`에 게임 id로 추가합니다 (없으면 커피잔 그림).
 4. 결과를 정하는 로직은 DOM 없는 파일(`plan.js`처럼)로 나누고 `tests/`에 테스트를 넣습니다.
 5. 위 표에 게임을 추가합니다.
 

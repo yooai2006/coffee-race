@@ -10,6 +10,7 @@ import { PLAYER_COLORS } from '../../shared/roster.js';
 import { makeLabel, sizeLabels } from '../../shared/labels.js';
 import { makeExclaim, animateExclaim } from '../../shared/fx.js';
 import { ui } from '../../shared/ui.js';
+import { animalChip } from '../../shared/animal-icons.js';
 import { planSkiJump, flight, hillY, TRICKS, HIGH_VY0, LIP_Y, HILL_LEN, OUTRUN_X } from './plan.js';
 import { createSkiAudio } from './sound.js';
 
@@ -144,11 +145,11 @@ function create() {
   // 순위표: 뛴 사람은 거리순, 지금 뛰는 사람 ⛷️, 아직 안 뛴 사람은 아래
   function hud() {
     const done = jumpers.filter(j => j.done).sort((a, b) => b.dist - a.dist);
-    const rows = done.map((j, i) => `<div class="r"><b>${i + 1}</b><i style="background:${j.color}"></i>${esc(j.player.name)} <small style="opacity:.8">${j.dist.toFixed(1)}m${j === jumpers[plan.loser] ? ' ⛄' : ''}</small></div>`);
-    if (active && !active.done) rows.push(`<div class="r"><b>⛷️</b><i style="background:${active.color}"></i>${esc(active.player.name)} <small style="opacity:.7">점프 중</small></div>`);
+    const rows = done.map((j, i) => `<div class="r"><b>${i + 1}</b>${animalChip(j.player.animal, j.color)}${esc(j.player.name)} <small>${j.dist.toFixed(1)}m${j === jumpers[plan.loser] ? ' ⛄' : ''}</small></div>`);
+    if (active && !active.done) rows.push(`<div class="r"><b>⛷️</b>${animalChip(active.player.animal, active.color)}${esc(active.player.name)} <small>점프 중</small></div>`);
     const waiting = plan.order.map(i => jumpers[i]).filter(j => !j.done && j !== active);
     if (waiting.length) rows.push(`<div class="r done"><small>대기 ${waiting.map(j => esc(j.player.name)).join(', ')}</small></div>`);
-    ui.hud('스키점프 순위', rows.join(''));
+    ui.hud('스키점프 순위', rows.join(''), { ranked: true });
   }
 
   // 언덕 위 x에서 몸 기울기 (내리막 각도)
@@ -281,15 +282,13 @@ function create() {
 
   function showResult() {
     const sorted = [...jumpers].sort((a, b) => b.dist - a.dist);
+    const L = jumpers[plan.loser];
     ui.showResult({
-      title: `☕ 오늘의 커피는 ${jumpers[plan.loser].player.name}!`,
-      head: ['순위', '참가자', '동물', '거리'],
-      rows: sorted.map((j, i) => [
-        j === jumpers[plan.loser] ? '☕' : ['🥇', '🥈', '🥉'][i] ?? `${i + 1}위`,
-        esc(j.player.name),
-        `<span class="dot" style="background:${j.color}"></span>${j.animal.name}`,
-        `${j.dist.toFixed(1)}m${j === jumpers[plan.loser] ? ' ⛄' : ''}`,
-      ]),
+      loser: { name: L.player.name, animal: L.player.animal, color: L.color },
+      rows: sorted.map((j, i) => ({
+        rank: i + 1, name: j.player.name, animal: j.player.animal, color: j.color, loser: j === L,
+        note: `${j.animal.name} · ${j.dist.toFixed(1)}m${j === L ? ' ⛄' : ''}`,
+      })),
     });
   }
 

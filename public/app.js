@@ -14,7 +14,7 @@ import * as THREE from 'three';
 import { $ } from './shared/util.js';
 import { ui } from './shared/ui.js';
 import { audioCtx, bindMuteButton } from './shared/audio.js';
-import { players, initSetup, renderSetup, renderPreview } from './shared/setup.js';
+import { players, initSetup, showStep, renderPreview } from './shared/setup.js';
 import { GAMES } from './games/registry.js';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -31,22 +31,31 @@ function useGame(def) {
   if (!made.has(def.id)) made.set(def.id, def.create());
   game = made.get(def.id);
   game.resize();
+  ui.gameTitle = def.title;
   document.title = `☕ 커피 내기 · ${def.title}`;
 }
 
 function startGame() {
   $('#setup').classList.add('hidden');
+  document.body.classList.remove('in-setup');
   audioCtx();   // 시작 버튼 클릭 안에서 소리 허용
   playing = true;
   game.start(players.map(p => ({ ...p })));
 }
 
-function toSetup(clear) {
+// 한 판 더: 같은 멤버·같은 게임으로 바로 다시 (결과는 시작하는 순간 새로 정해진다)
+function playAgain() {
+  game.stop(); ui.reset();
+  startGame();
+}
+
+// 게임 바꾸기: 멤버는 그대로 두고 1단계(게임 고르기)로
+function toSetup() {
   game.stop(); playing = false;
   ui.reset();
-  if (clear) players.length = 0;
   $('#setup').classList.remove('hidden');
-  renderSetup();
+  document.body.classList.add('in-setup');
+  showStep(1);
 }
 
 const clock = new THREE.Clock();
@@ -54,14 +63,19 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.05), time = clock.elapsedTime;
   game.update(dt, time);
   if (!playing) renderPreview(dt);
-  renderer.render(game.scene, game.camera);
+  else renderer.render(game.scene, game.camera);   // 설정 화면은 불투명해서 뒤의 게임 장면은 그리지 않는다
 });
 
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
   for (const g of made.values()) g.resize();
 });
-$('#againBtn').onclick = () => toSetup(false);
-$('#resetBtn').onclick = () => toSetup(true);
+$('#againBtn').onclick = playAgain;
+$('#changeBtn').onclick = toSetup;
+// 버튼을 누르면 폰에서 짧게 진동한다 (지원하는 기기만)
+addEventListener('pointerdown', e => {
+  const b = e.target.closest('.tap, .tile');
+  if (b && !b.disabled && navigator.vibrate) navigator.vibrate(8);
+}, { passive: true });
 initSetup({ gameList: GAMES, onStart: startGame, onGame: useGame });
 bindMuteButton($('#muteBtn'));

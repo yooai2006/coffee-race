@@ -8,6 +8,7 @@ import { playCall, playLoserCry } from '../../shared/animal-sounds.js';
 import { PLAYER_COLORS, MAX_PLAYERS } from '../../shared/roster.js';
 import { makeLabel, sizeLabels } from '../../shared/labels.js';
 import { ui } from '../../shared/ui.js';
+import { animalChip } from '../../shared/animal-icons.js';
 import { LANE_W, X_FIN, laneR, lapLen, trackPoint, buildTrack } from './track.js';
 import { planRace, frac } from './race-plan.js';
 import { createRaceAudio } from './sound.js';
@@ -19,7 +20,7 @@ export default {
   id: 'race',
   title: '동물 레이스',
   emoji: '🏇',
-  rule: '꼴찌로 들어오는 동물의 주인이 커피를 삽니다. 참가자를 입력하고 각자 동물을 고르세요.',
+  rule: '꼴찌로 들어오는 동물의 주인이 커피를 삽니다.',
   startLabel: '🏁 경주 시작',
   // 평균 걸리는 시간(초): 카운트다운 2 + 경주 약 7 + 결승 슬로모션 약 3 + 결과까지 2.2
   seconds: () => 15,
@@ -145,21 +146,19 @@ function create() {
   function updateHud() {
     const sorted = [...runners].sort((a, b) => (a.finished && b.finished) ? a.rank - b.rank : (b.d / b.L) - (a.d / a.L));
     ui.hud('실시간 순위', sorted.map((rn, i) =>
-      `<div class="r${rn.finished ? ' done' : ''}"><b>${i + 1}</b><i style="background:${rn.color}"></i>${esc(rn.player.name)} <small style="opacity:.7">${rn.animal.name}</small>${rn.finished ? ' 🏁' : ''}</div>`).join(''));
+      `<div class="r${rn.finished ? ' done' : ''}"><b>${i + 1}</b>${animalChip(rn.player.animal, rn.color)}${esc(rn.player.name)}${rn.finished ? ' 🏁' : ''}</div>`).join(''), { ranked: true });
   }
 
   function showResult() {
     phase = 'result';
     const sorted = [...runners].sort((a, b) => a.rank - b.rank);
+    const last = sorted[sorted.length - 1];   // 꼴찌가 커피를 산다
     ui.showResult({
-      title: '🏁 경주 결과',
-      head: ['순위', '참가자', '동물', '기록'],
-      rows: sorted.map((rn, i) => [
-        ['🥇', '🥈', '🥉'][i] ?? `${i + 1}위`,
-        esc(rn.player.name),
-        `<span class="dot" style="background:${rn.color}"></span>${rn.animal.name}`,
-        `${rn.T.toFixed(2)}초`,
-      ]),
+      loser: { name: last.player.name, animal: last.player.animal, color: last.color },
+      rows: sorted.map((rn, i) => ({
+        rank: i + 1, name: rn.player.name, animal: rn.player.animal, color: rn.color,
+        note: `${rn.animal.name} · ${rn.T.toFixed(2)}초`, loser: rn === last,
+      })),
     });
   }
 

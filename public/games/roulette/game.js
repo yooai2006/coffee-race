@@ -321,14 +321,11 @@ function create() {
   function showResult(loser) {
     const order = [loser, ...seats.filter(st => st !== loser)];
     ui.showResult({
-      title: `☕ 오늘의 커피는 ${loser.player.name}!`,
-      head: ['', '참가자', '동물', '기록'],
-      rows: order.map(st => [
-        st === loser ? '☕' : '😮‍💨',
-        esc(st.player.name),
-        `<span class="dot" style="background:${st.color}"></span>${st.animal.name}`,
-        st === loser ? `커피콩 명중${st.aimed > 1 ? ` (${st.aimed - 1}번 살아남은 뒤)` : ''}` : st.aimed ? `${st.aimed}번 겨눠지고 생존` : '한 번도 안 겨눠짐',
-      ]),
+      loser: { name: loser.player.name, animal: loser.player.animal, color: loser.color },
+      rows: order.map(st => ({
+        mark: st === loser ? '☕' : '😮‍💨', name: st.player.name, animal: st.player.animal, color: st.color, loser: st === loser,
+        note: `${st.animal.name} · ${st === loser ? `커피콩 명중${st.aimed > 1 ? ` (${st.aimed - 1}번 살아남은 뒤)` : ''}` : st.aimed ? `${st.aimed}번 겨눠지고 생존` : '한 번도 안 겨눠짐'}`,
+      })),
     });
   }
 

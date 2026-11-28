@@ -8,6 +8,7 @@ import { playCall, playLoserCry } from '../../shared/animal-sounds.js';
 import { PLAYER_COLORS } from '../../shared/roster.js';
 import { makeLabel, sizeLabels } from '../../shared/labels.js';
 import { ui } from '../../shared/ui.js';
+import { animalChip } from '../../shared/animal-icons.js';
 import { planPlinko, markerAt, pingpong, slotM, MARKER_SPEED, FALL0, SLOTS, ROWS, M_MAX } from './plan.js';
 import { createPlinkoAudio } from './sound.js';
 
@@ -153,7 +154,7 @@ function create() {
   function hud() {
     ui.hud('핀볼 낙하', runners.map(rn => {
       const st = !rn.landed ? '⬇️' : rn === runners[plan.loser] ? '☕' : '✅';
-      return `<div class="r${rn.landed ? ' done' : ''}"><b>${st}</b><i style="background:${rn.color}"></i>${esc(rn.player.name)} <small style="opacity:.7">${rn.animal.name}</small></div>`;
+      return `<div class="r${rn.landed ? ' done' : ''}"><b>${st}</b>${animalChip(rn.player.animal, rn.color)}${esc(rn.player.name)}</div>`;
     }).join(''));
   }
 
@@ -214,14 +215,11 @@ function create() {
     phase = 'result';
     const loser = runners[plan.loser], rest = runners.filter(r => r !== loser).sort((a, b) => a.order - b.order);
     ui.showResult({
-      title: `☕ 오늘의 커피는 ${loser.player.name}!`,
-      head: ['', '참가자', '동물', '기록'],
-      rows: [loser, ...rest].map(rn => [
-        rn === loser ? '☕' : '✅',
-        esc(rn.player.name),
-        `<span class="dot" style="background:${rn.color}"></span>${rn.animal.name}`,
-        `${rn === loser ? '☕ 칸' : '안전'} · ${rn.order}번째 착지`,
-      ]),
+      loser: { name: loser.player.name, animal: loser.player.animal, color: loser.color },
+      rows: [loser, ...rest].map(rn => ({
+        mark: rn === loser ? '☕' : '✅', name: rn.player.name, animal: rn.player.animal, color: rn.color, loser: rn === loser,
+        note: `${rn.animal.name} · ${rn === loser ? '☕ 칸' : '안전'} · ${rn.order}번째 착지`,
+      })),
     });
   }
 

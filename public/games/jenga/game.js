@@ -221,14 +221,11 @@ function create() {
   function showResult(L) {
     const order = [L, ...seats.filter(s => s !== L)];
     ui.showResult({
-      title: `☕ 오늘의 커피는 ${L.player.name}!`,
-      head: ['', '참가자', '동물', '기록'],
-      rows: order.map(st => [
-        st === L ? '💥' : '😮‍💨',
-        esc(st.player.name),
-        `<span class="dot" style="background:${st.color}"></span>${st.animal.name}`,
-        st === L ? `와르르! (${st.pulls}번 성공 뒤)` : `${st.pulls}번 성공`,
-      ]),
+      loser: { name: L.player.name, animal: L.player.animal, color: L.color },
+      rows: order.map(st => ({
+        mark: st === L ? '💥' : '😮‍💨', name: st.player.name, animal: st.player.animal, color: st.color, loser: st === L,
+        note: `${st.animal.name} · ${st === L ? `와르르! (${st.pulls}번 성공 뒤)` : `${st.pulls}번 성공`}`,
+      })),
     });
   }
 
