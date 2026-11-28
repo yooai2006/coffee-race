@@ -140,7 +140,27 @@ function create() {
     holder.visible = false; scene.add(holder);
     return { player: p, animal: ANIMALS[p.animal], color: PLAYER_COLORS[i], holder, tilt, spinner, model, trick: plan.trick[i], vy0: plan.vy0[i], ball, label, h, dist: plan.dist[i], done: false, rank: 0, phase: Math.random() * 6, exclaim: null };
   }
-  function clearJumpers() { jumpers.forEach(j => disposeTree(j.holder)); jumpers = []; }
+  function clearJumpers() { jumpers.forEach(j => disposeTree(j.holder)); jumpers = []; flags.forEach(disposeTree); flags = []; }
+
+  // 착지한 자리에 참가자 색 깃발을 꽂는다 (이름 + 거리). 다음 사람이 뛸 때 기록을 눈으로 비교할 수 있다
+  let flags = [];
+  // 이름표 크기 (화면 높이 기준 비율): 세로 화면은 화각이 넓어 같은 값이 크게 보이므로 줄인다
+  const sizeFlag = f => { const k = camera.aspect < 1 ? 0.13 : 0.2; f.userData.tag.scale.set(k, k * 0.375, 1); };
+  function plantFlag(j) {
+    const g = new THREE.Group(), y = hillY(j.dist);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.2, 8), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+    pole.position.y = 1.6; pole.castShadow = true; g.add(pole);
+    const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(256, 96, (x, w, h) => {
+      x.fillStyle = j.color; x.strokeStyle = '#3b2c52'; x.lineWidth = 8;
+      x.beginPath(); x.roundRect(6, 6, w - 12, h - 12, 20); x.fill(); x.stroke();
+      x.fillStyle = '#fff'; x.font = 'bold 40px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText(`${j.player.name} ${j.dist.toFixed(1)}m`, w / 2, h / 2 + 2, w - 28);
+    }), sizeAttenuation: false, depthTest: false }));   // 멀리서 봐도 같은 크기, 나무에 가리지 않게
+    tag.center.set(0.5, 0); tag.position.y = 3.2 + (flags.length % 2) * 1.8; tag.renderOrder = 5; g.add(tag);
+    g.userData.tag = tag; sizeFlag(g);
+    g.position.set(j.dist, y, -4 - (flags.length % 2) * 2.5);   // 비행길(z=0) 뒤쪽. 가까운 기록끼리 겹치지 않게 두 줄로
+    scene.add(g); flags.push(g);
+  }
 
   // 순위표: 뛴 사람은 거리순, 지금 뛰는 사람 ⛷️, 아직 안 뛴 사람은 아래
   function hud() {
@@ -195,6 +215,7 @@ function create() {
     timeRate = 1; sound.windOff(0.4);
     j.spinner.rotation.set(0, 0, 0); j.spinner.scale.setScalar(1);
     // 4) 착지
+    plantFlag(j);
     const stopAt = jumpers.filter(o => o.done).length;
     if (jumpers.indexOf(j) === plan.loser) await tumble(j, alive);
     else await landWell(j, stopAt, alive);
@@ -204,7 +225,9 @@ function create() {
     ui.pop(`${j.dist.toFixed(1)}m`, { mid: true });
     if (j.dist === best && jumpers.filter(o => o.done).length > 1) { ui.banner(`🏆 신기록! ${j.player.name} ${j.dist.toFixed(1)}m`); sound.record(); }
     hud();
-    await wait(1.4);
+    // 5) 착지 깃발을 모두 한 화면에: 카메라가 뒤로 빠져서 지금까지의 기록을 비교해 보여 준다
+    camMode = 'landing'; camRate = 3;
+    await wait(2.2);
   }
 
   // 공중 기술 자세: 비행의 15%~80% 구간에서 돌고, 착지 전에 바로 선다. 돌아간 정도(0..1)를 돌려준다
@@ -330,6 +353,18 @@ function create() {
       wantPos.copy(p).add(tmp.set(-6, 8, 4 * far)); wantLook.copy(p).add(tmp.set(9, -4, 0));   // 점프대 아래로 들어가지 않게 높이
     } else if (camMode === 'flight') {
       wantPos.set(p.x + 1, p.y + 2, p.z + 13 * far); wantLook.set(p.x + 4, p.y - 1.5, p.z);   // 공중 기술이 잘 보이게 가까이, 옆에서 따라간다
+    } else if (camMode === 'landing') {
+      // 깃발이 모두 들어오는 거리: 가로 화각으로 계산한다 (세로 폰은 가로가 좁아서 더 멀리)
+      const ds = flags.map(f => f.position.x), lo = Math.min(...ds), hi = Math.max(...ds), cx = (lo + hi) / 2;
+      if (portrait) {
+        // 세로 화면: 언덕 위에서 아래를 내려다본다. 거리선이 자처럼 위아래로 쌓인다
+        const bx = Math.min(lo, 92) - 22;
+        wantPos.set(bx, hillY(bx) + 16, 3); wantLook.set(cx + 6, hillY(cx + 6), -4);
+      } else {
+        const cy = hillY(cx), span = Math.max(26, hi - lo + 20);
+        const d = span / 2 / (Math.tan(camera.fov * PI / 360) * camera.aspect);
+        wantLook.set(cx, cy + 1, -4); wantPos.set(cx - d * 0.12, cy + 3 + d * 0.4, -4 + d);
+      }
     } else if (camMode === 'final') {
       wantPos.copy(p).add(tmp.set(-7, 4, 7 * far)); wantLook.copy(p).add(tmp.set(0, 1.8, 0));
     }
@@ -359,6 +394,7 @@ function create() {
     camera.fov = camera.aspect < 1 ? 62 : 50;
     camera.updateProjectionMatrix();
     sizeLabels(jumpers.map(j => j.label), camera);
+    flags.forEach(sizeFlag);
   }
 
   return { scene, camera, start, stop, update, resize };

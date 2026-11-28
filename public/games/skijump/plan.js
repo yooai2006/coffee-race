@@ -43,6 +43,15 @@ export const VY0_MIN = 1.5, VY0_MAX = 9, HIGH_VY0 = 6;
 
 const half = x => Math.round(x * 2) / 2;
 
+// 처음 위로 뜨는 속도: 멀리 가는 점프일수록 높이 뜬다 (짧은 점프가 멀리 간 것처럼 보이지 않게).
+// 같은 거리라도 조금씩 다르도록 ±HEIGHT_JITTER(비율)만큼 흔든다.
+export const HEIGHT_JITTER = 0.12;
+export function jumpHeight(d, rand = Math.random) {
+  const t = (d - MIN_D) / (MAX_D - MIN_D);
+  const k = Math.min(1, Math.max(0, 0.1 + 0.8 * t + (rand() - 0.5) * 2 * HEIGHT_JITTER));
+  return VY0_MIN + k * (VY0_MAX - VY0_MIN);
+}
+
 // order[k] = k번째로 뛰는 참가자, dist[i] = 참가자 i의 거리
 export function planSkiJump(n, rand = Math.random) {
   const dist = Array(n).fill(0), used = new Set();
@@ -61,7 +70,7 @@ export function planSkiJump(n, rand = Math.random) {
   const vy0 = Array(n).fill(0), trick = Array(n).fill('v');
   let prev = '';
   for (const i of order) {
-    vy0[i] = VY0_MIN + rand() * (VY0_MAX - VY0_MIN);
+    vy0[i] = jumpHeight(dist[i], rand);
     const ok = Object.keys(TRICKS).filter(k => k !== prev && (!TRICKS[k].high || vy0[i] >= HIGH_VY0));
     trick[i] = prev = ok[Math.floor(rand() * ok.length)];
   }
