@@ -15,7 +15,7 @@ import { planSkiJump, flight, hillY, TRICKS, HIGH_VY0, LIP_Y, HILL_LEN, OUTRUN_X
 import { createSkiAudio } from './sound.js';
 
 const PI = Math.PI;
-const T_INTRO = 1.4, T_INRUN = 2.6, SLOWMO = 0.5, SLOW_RATE = 0.3, T_SLIDE = 2.0;
+const T_INTRO = 1.4, T_INRUN = 2.6, SLOWMO = 0.5, SLOW_RATE = 0.3, T_SLIDE = 1.4;
 const INRUN = new THREE.CatmullRomCurve3([[-66, 44], [-44, 29], [-22, 13], [-8, 5.8], [0, LIP_Y]].map(([x, y]) => new THREE.Vector3(x, y, 0)));
 const LINES = [80, 90, 100, 110, 120, 130], K_POINT = 120;
 const ease = k => 1 - (1 - k) ** 3;
@@ -26,8 +26,8 @@ export default {
   emoji: '🎿',
   rule: '한 마리씩 점프대를 타고 날아갑니다. 가장 짧게 날아간 동물(착지하다 굴러서 눈덩이가 돼요)의 주인이 커피를 삽니다.',
   startLabel: '🎿 경기 시작',
-  // 평균 걸리는 시간(초): 시작 약 2 + 한 명당 약 12.5 (소개 1.4 + 활강 2.6 + 비행·슬로모션 약 5 + 착지 2 + 거리 1.4) + 마지막 4
-  seconds: n => 6 + 12.5 * n,
+  // 평균 걸리는 시간(초): 시작 약 2 + 한 명당 약 12.6 (소개 1.4 + 활강 2.6 + 비행·슬로모션 약 5 + 착지 1.4 + 깃발 비교 2.2) + 마지막 4
+  seconds: n => 6 + 12.6 * n,
   create,
 };
 
@@ -142,23 +142,31 @@ function create() {
   }
   function clearJumpers() { jumpers.forEach(j => disposeTree(j.holder)); jumpers = []; flags.forEach(disposeTree); flags = []; }
 
-  // 착지한 자리에 참가자 색 깃발을 꽂는다 (이름 + 거리). 다음 사람이 뛸 때 기록을 눈으로 비교할 수 있다
+  // 착지한 자리 표시: 눈 위에 참가자 색 줄 + 말풍선 이름표(이름 + 거리). 다음 사람이 뛸 때 기록을 눈으로 비교할 수 있다.
+  // 이름표는 공중에 띄우지 않는다. 띄우면 비스듬히 볼 때 더 먼 곳에 있는 것처럼 보인다.
+  // 그래서 말풍선의 뾰족한 끝이 땅의 착지 지점에 닿는다.
   let flags = [];
+  const TAG_W = 256, TAG_H = 128;
   // 이름표 크기 (화면 높이 기준 비율): 세로 화면은 화각이 넓어 같은 값이 크게 보이므로 줄인다
-  const sizeFlag = f => { const k = camera.aspect < 1 ? 0.13 : 0.2; f.userData.tag.scale.set(k, k * 0.375, 1); };
+  const sizeFlag = f => { const k = camera.aspect < 1 ? 0.13 : 0.2; f.userData.tag.scale.set(k, k * TAG_H / TAG_W, 1); };
   function plantFlag(j) {
-    const g = new THREE.Group(), y = hillY(j.dist);
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.2, 8), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-    pole.position.y = 1.6; pole.castShadow = true; g.add(pole);
-    const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(256, 96, (x, w, h) => {
-      x.fillStyle = j.color; x.strokeStyle = '#3b2c52'; x.lineWidth = 8;
-      x.beginPath(); x.roundRect(6, 6, w - 12, h - 12, 20); x.fill(); x.stroke();
-      x.fillStyle = '#fff'; x.font = 'bold 40px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-      x.fillText(`${j.player.name} ${j.dist.toFixed(1)}m`, w / 2, h / 2 + 2, w - 28);
+    const g = new THREE.Group(), lane = flags.length % 2;   // 가까운 기록끼리 겹치지 않게 두 줄
+    const z = -3.5 - lane * 5, y = hillY(j.dist), slope = Math.atan2(hillY(j.dist + 0.5) - hillY(j.dist - 0.5), 1);
+    const mark = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 4.5), new THREE.MeshBasicMaterial({ color: j.color }));
+    mark.rotation.z = slope; mark.position.y = 0.04; g.add(mark);
+    const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(TAG_W, TAG_H, (x, w, h) => {
+      const bh = 88;   // 말풍선 몸통 높이. 아래는 뾰족한 꼬리
+      x.fillStyle = j.color; x.strokeStyle = '#3b2c52'; x.lineWidth = 8; x.lineJoin = 'round';
+      x.beginPath(); x.roundRect(6, 6, w - 12, bh - 6, 20);
+      x.moveTo(w / 2 - 18, bh); x.lineTo(w / 2, h - 4); x.lineTo(w / 2 + 18, bh);
+      x.fill(); x.stroke();
+      x.fillRect(w / 2 - 14, bh - 8, 28, 10);   // 몸통과 꼬리 사이 테두리 지우기
+      x.fillStyle = '#fff'; x.font = 'bold 38px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText(`${j.player.name} ${j.dist.toFixed(1)}m`, w / 2, bh / 2 + 4, w - 30);
     }), sizeAttenuation: false, depthTest: false }));   // 멀리서 봐도 같은 크기, 나무에 가리지 않게
-    tag.center.set(0.5, 0); tag.position.y = 3.2 + (flags.length % 2) * 1.8; tag.renderOrder = 5; g.add(tag);
+    tag.center.set(0.5, 0); tag.position.y = 0.1; tag.renderOrder = 5; g.add(tag);   // 꼬리 끝 = 착지 지점
     g.userData.tag = tag; sizeFlag(g);
-    g.position.set(j.dist, y, -4 - (flags.length % 2) * 2.5);   // 비행길(z=0) 뒤쪽. 가까운 기록끼리 겹치지 않게 두 줄로
+    g.position.set(j.dist, y, z);
     scene.add(g); flags.push(g);
   }
 
@@ -175,7 +183,6 @@ function create() {
   // 언덕 위 x에서 몸 기울기 (내리막 각도)
   const slopeAt = x => Math.atan2(hillY(x + 0.5) - hillY(x - 0.5), 1);
   // 착지 후 멈출 자리: 정리 구간에 나란히 선다
-  const stopX = k => OUTRUN_X - 8 + (k % 2) * 3, stopZ = k => -6 + k * 2.4;   // 뒤에 뛴 사람일수록 카메라(+z) 쪽
 
   async function jump(j, k, alive) {
     active = j; j.holder.visible = true; j.label.visible = true;
@@ -214,15 +221,15 @@ function create() {
     }); if (!alive()) return;
     timeRate = 1; sound.windOff(0.4);
     j.spinner.rotation.set(0, 0, 0); j.spinner.scale.setScalar(1);
-    // 4) 착지
+    // 4) 착지: 땅에 닿는 순간 깃발을 꽂고 거리를 띄운다 (미끄러져 멈춘 뒤에 띄우면 엉뚱한 선 옆에서 숫자가 보인다)
     plantFlag(j);
+    ui.pop(`${j.dist.toFixed(1)}m`, { mid: true });
     const stopAt = jumpers.filter(o => o.done).length;
-    if (jumpers.indexOf(j) === plan.loser) await tumble(j, alive);
-    else await landWell(j, stopAt, alive);
+    if (jumpers.indexOf(j) === plan.loser) await tumble(j, f.vx, alive);
+    else await landWell(j, stopAt, f.vx, alive);
     if (!alive()) return;
     j.done = true;
     const best = Math.max(...jumpers.filter(o => o.done).map(o => o.dist));
-    ui.pop(`${j.dist.toFixed(1)}m`, { mid: true });
     if (j.dist === best && jumpers.filter(o => o.done).length > 1) { ui.banner(`🏆 신기록! ${j.player.name} ${j.dist.toFixed(1)}m`); sound.record(); }
     hud();
     // 5) 착지 깃발을 모두 한 화면에: 카메라가 뒤로 빠져서 지금까지의 기록을 비교해 보여 준다
@@ -250,13 +257,21 @@ function create() {
     return u;
   }
 
-  async function landWell(j, k, alive) {
+  // 착지 뒤 미끄러지기: 비행 속도(vx) 그대로 이어서 점점 느려진다 (x = x0 + L·(1-(1-k)²), 처음 속도 = 2L/T = vx).
+  // 착지 순간 갑자기 빨라지면 착지 지점이 안 보이고 멈춘 곳에 착지한 것처럼 보인다.
+  const slideLen = (vx, T) => vx * T / 2;
+  const easeOut2 = k => 1 - (1 - k) ** 2;
+  const smooth = k => k * k * (3 - 2 * k);
+
+  // 잘 착지: 미끄러지다 마지막에 옆으로 돌며 멈춘다 (하키 스톱). 멈춘 동물은 비행길(z=0) 뒤쪽 줄에 선다
+  async function landWell(j, k, vx, alive) {
     sound.land((j.dist - 76) / 58);
-    const x0 = j.dist, x1 = stopX(k), z1 = stopZ(k);
+    const x0 = j.dist, L = slideLen(vx, T_SLIDE), z1 = -11 - (k % 3) * 2.2;
     await tween(T_SLIDE, kk => {
-      const e = ease(kk), x = x0 + (x1 - x0) * e;
-      j.holder.position.set(x, hillY(x), z1 * e);
-      j.tilt.rotation.z = slopeAt(x) * (1 - e * 0.2);
+      const x = x0 + L * easeOut2(kk), turn = smooth(Math.max(0, (kk - 0.55) / 0.45));
+      j.holder.position.set(x, hillY(x), z1 * smooth(kk));
+      j.holder.rotation.y = (-PI / 2 + 0.3) * turn;          // 옆으로 돌면 스키가 언덕을 가로질러 평평하게 놓인다
+      j.tilt.rotation.z = slopeAt(x) * (1 - turn);
       j.tilt.scale.y = 1 - 0.18 * Math.sin(Math.min(1, kk * 4) * PI);   // 텔레마크 착지: 살짝 웅크렸다 편다
       j.model.animate(j.phase += 0.08, 0.1 * (1 - kk));
     });
@@ -266,12 +281,12 @@ function create() {
   }
 
   // 꼴찌: 착지하다 넘어져 데굴데굴 구르며 눈덩이가 된다. 멈추면 눈덩이 위로 얼굴이 쏙
-  async function tumble(j, alive) {
+  async function tumble(j, vx, alive) {
     sound.land(0); sound.tumble();
-    const x0 = j.dist, x1 = OUTRUN_X - 16, z1 = -12;   // 착지 구역을 비우고, 카메라 반대편(관중 쪽)으로 굴러간다
+    const x0 = j.dist, L = slideLen(vx, 2.2), z1 = -12;   // 비행 속도 그대로 굴러가다 멈춘다. 카메라 반대편(관중 쪽)으로
     j.ball.visible = true;
     await tween(2.2, kk => {
-      const e = ease(kk), x = x0 + (x1 - x0) * e, r = 0.4 + 1.1 * Math.min(1, kk * 1.4);
+      const e = ease(kk), x = x0 + L * easeOut2(kk), r = 0.4 + 1.1 * Math.min(1, kk * 1.4);
       j.ball.scale.setScalar(r); j.ball.position.set(0, r, 0); j.ball.rotation.z -= 0.25 * (1 - kk);
       j.holder.position.set(x, hillY(x), z1 * e);
       j.tilt.visible = kk < 0.12; j.tilt.rotation.z -= 0.6;
