@@ -11,7 +11,7 @@ test('동물 스티커 18종 파일이 있다', () => {
 });
 
 test('게임 카드 그림 파일이 있다', () => {
-  for (const id of ['race', 'roulette', 'plinko', 'bomb', 'skijump', 'jenga']) {
+  for (const id of ['race', 'roulette', 'plinko', 'bomb', 'skijump', 'jenga', 'kongkong']) {
     const src = gameCardImg(id).match(/src="([^"]+)"/)[1];
     assert.ok(existsSync(fileURLToPath(src)), src);
   }

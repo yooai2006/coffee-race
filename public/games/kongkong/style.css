@@ -1,0 +1,59 @@
+/* ⏱ 콩콩팥팥 화면. 색·글꼴·버튼은 shared/base.css 를 그대로 쓴다.
+   폰 세로 화면 기준. 넓은 화면에서는 가운데 폰 크기 틀 안에 보여 준다. */
+.kk { position: fixed; inset: 0; z-index: 4; display: flex; justify-content: center; background: var(--bg-deep); user-select: none; -webkit-user-select: none; }
+.kkFrame { position: relative; width: 100%; max-width: 480px; height: 100%; overflow: hidden;
+  background: #c6b2f4 url(../../assets/kongkong/bg.webp) center bottom / cover no-repeat; }
+
+/* 아래에서부터: 안내 → 버튼 → 스톱워치 → 누구 차례 (위쪽은 정보판 자리) */
+.kkPlay { --w: min(80vw, 44vh, 380px); position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+  gap: 12px; padding: 0 20px calc(20px + var(--safe-b)); }
+.kkWho { display: flex; align-items: center; gap: 8px; padding: 4px 16px 4px 4px; border-radius: 999px; background: var(--paper);
+  box-shadow: 0 4px 0 rgba(59,44,82,.2); font-family: var(--font-fun); font-size: 20px; }
+.kkWho .achip { width: 36px; height: 36px; }
+.kkStep { font-size: 14px; color: var(--ink-soft); }
+.kkWatch { position: relative; width: var(--w); aspect-ratio: 1; touch-action: manipulation; cursor: pointer; }
+.kkWatch > img { width: 100%; height: 100%; display: block; pointer-events: none; }
+.kkWatch.shake { animation: kkShake .5s; }
+/* 스톱워치 그림의 흰 면 위치 (stopwatch.webp 기준 비율) */
+.kkFace { position: absolute; left: 24.4%; top: 23.8%; width: 51.1%; height: 52%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.kkTime { display: flex; font-family: var(--font-fun); font-size: calc(var(--w) * 0.15); line-height: 1; color: var(--ink); }
+.kkTime span, .kkTime em { display: inline-block; width: 0.6em; text-align: center; font-style: normal; }
+.kkTime .dot { width: 0.3em; }
+.kkTime em { color: var(--pink); }
+.kkTime em.hit { color: #fff; background: var(--pink); border-radius: 0.18em; animation: kkHit .4s cubic-bezier(.3,1.8,.5,1); }
+.kkEq { margin-top: 6%; font-family: var(--font-fun); font-size: calc(var(--w) * 0.075); color: var(--ink-soft); min-height: 1.2em; }
+.kkEq b { color: var(--ink); font-weight: 400; }
+.kkBtn { max-width: 340px; min-height: 66px; font-size: 26px; }
+.kkBtn.run { background: var(--pink); color: #fff; }
+.kkTip { margin: 0; font-size: 13px; font-weight: 700; color: var(--ink); background: rgba(255,253,248,.8); border-radius: 999px; padding: 4px 14px; }
+.kkTip b { color: var(--pink); }
+
+/* 차례 넘기기 */
+.kkHand { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: 20px; background: rgba(59,44,82,.45); backdrop-filter: blur(3px); }
+.kkCard { width: 100%; max-width: 360px; padding: 22px 20px 22px; text-align: center; background: var(--paper); border: 3px solid var(--ink); border-radius: 28px;
+  box-shadow: 0 6px 0 var(--ink); animation: kkIn .4s cubic-bezier(.3,1.5,.5,1) both; }
+.kkRound { font-family: var(--font-fun); font-size: 17px; color: #e8590c; }
+.kkFace2 .ani { width: 120px; height: 120px; margin: 6px 0 2px; animation: hop .6s ease-out; }
+.kkHandName { font-family: var(--font-fun); font-size: 34px; line-height: 1.2; }
+.kkHandSub { margin: 4px 0 10px; font-size: 15px; color: var(--ink-soft); }
+.kkOrder { margin: 0 0 18px; font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+
+/* 튀어 오르는 콩 */
+.kkBeans { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.kkBeans img { position: absolute; width: 64px; height: 64px; opacity: 0; animation: kkBean 1.2s ease-out forwards; }
+
+@keyframes kkBean {
+  0% { transform: translate(0, 0) scale(.4) rotate(0); opacity: 0; }
+  12% { opacity: 1; }
+  45% { transform: translate(var(--dx), -150px) scale(1) rotate(var(--r)); }
+  100% { transform: translate(calc(var(--dx) * 1.6), 260px) scale(.9) rotate(calc(var(--r) * 2)); opacity: 0; }
+}
+@keyframes kkHit { 0% { transform: scale(.5); } 100% { transform: scale(1); } }
+@keyframes kkIn { 0% { transform: scale(.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes kkShake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-10px) rotate(-3deg); } 40% { transform: translateX(10px) rotate(3deg); } 60% { transform: translateX(-6px); } 80% { transform: translateX(6px); } }
+
+@media (max-height: 640px) {
+  .kkPlay { gap: 8px; }
+  .kkBtn { min-height: 56px; font-size: 22px; }
+  .kkTip { display: none; }
+}

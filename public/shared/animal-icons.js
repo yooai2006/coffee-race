@@ -5,7 +5,7 @@
 const CHARACTER_FILES = ['rat', 'ox', 'tiger', 'rabbit', 'dragon', 'snake', 'horse', 'sheep', 'monkey',
   'rooster', 'dog', 'pig', 'armadillo', 'penguin', 'capybara', 'giraffe', 'cat', 'usain-bolt'];
 // 게임 id → 카드 그림 파일 이름
-const CARD_FILES = { race: 'horse-race', roulette: 'roulette', plinko: 'plinko', bomb: 'bomb', skijump: 'skijump', jenga: 'jenga' };
+const CARD_FILES = { race: 'horse-race', roulette: 'roulette', plinko: 'plinko', bomb: 'bomb', skijump: 'skijump', jenga: 'jenga', kongkong: 'kongkong' };
 
 const asset = p => new URL(`../assets/${p}`, import.meta.url).href;
 export const characterUrl = i => asset(`characters/${CHARACTER_FILES[i]}.webp`);

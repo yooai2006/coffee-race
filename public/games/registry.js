@@ -6,5 +6,6 @@ import plinko from './plinko/game.js';
 import bomb from './bomb/game.js';
 import skijump from './skijump/game.js';
 import jenga from './jenga/game.js';
+import kongkong from './kongkong/game.js';
 
-export const GAMES = [race, roulette, plinko, bomb, skijump, jenga];
+export const GAMES = [race, roulette, plinko, bomb, skijump, jenga, kongkong];
