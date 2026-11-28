@@ -166,7 +166,11 @@ body.typing #step2 .paper, body.typing #step2 .bar { display: none; }
 .ranks .nm { font-family: var(--font-fun); font-size: 19px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ranks .sub { font-size: 12.5px; color: var(--ink-soft); font-weight: 600; }
 .ranks li.loser { background: #ffe3ec; box-shadow: inset 0 0 0 3px var(--pink); }
-#result .bar { margin-top: auto; padding-top: 22px; }
+/* 버튼은 화면 아래에 고정: 참가자가 많아 목록이 길어도 [한 판 더]·[결과 공유]가 항상 보인다 */
+#result .bar { position: sticky; bottom: 0; z-index: 2; margin: auto -16px calc(-16px - var(--safe-b)); padding: 26px 16px calc(16px + var(--safe-b));
+  background: linear-gradient(rgba(198,178,244,0), var(--bg) 26px); }
+#result .two { grid-template-columns: 1fr 1fr; }
+#result .two .btn { font-size: 19px; padding: 10px 8px; }
 
 /* ── 넓은 화면: 가운데 폰 크기 카드 ── */
 @media (min-width: 700px) and (min-height: 600px) {

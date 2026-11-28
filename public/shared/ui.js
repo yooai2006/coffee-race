@@ -2,6 +2,7 @@
 import { $, esc, sleep } from './util.js';
 import { beep } from './audio.js';
 import { animalImg, animalChip } from './animal-icons.js';
+import { renderResultImage } from './share.js';
 
 // 결과 화면의 큰 커피잔
 const CUP = `<svg class="cupBig" viewBox="0 0 100 100" aria-hidden="true"><g stroke="#3b2c52" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
@@ -12,7 +13,7 @@ const CUP = `<svg class="cupBig" viewBox="0 0 100 100" aria-hidden="true"><g str
   <g transform="translate(44 62) rotate(25)"><ellipse rx="11" ry="15" fill="#8a5126"/><path d="M0 -13 q-6 13 0 26" fill="none" stroke-width="3.5"/></g>
 </g></svg>`;
 
-let toastTimer = 0, lastHud = '';
+let toastTimer = 0, lastHud = '', shareJob = null, shareText = '';
 
 export const ui = {
   gameTitle: '',   // 결과 화면 제목 ("○○ 결과"). app.js가 게임을 고를 때 넣는다
@@ -64,7 +65,11 @@ export const ui = {
   // loser: 커피 살 사람 { name, animal(ANIMALS 인덱스), color }
   // rows: 위에서부터 보여 줄 줄 [{ rank(숫자) 또는 mark(이모지), name, animal, color, note, loser }]
   showResult({ loser, rows }) {
-    $('#resultTitle').textContent = ui.gameTitle ? `${ui.gameTitle} 결과` : '결과';
+    const title = ui.gameTitle ? `${ui.gameTitle} 결과` : '결과';
+    $('#resultTitle').textContent = title;
+    // 공유 이미지는 미리 만들어 둔다: 버튼을 누른 직후에 공유 창을 열어야 iPhone이 막지 않는다
+    shareText = `${title}: 오늘의 커피는 ${loser.name}! ☕`;
+    shareJob = renderResultImage({ title, loser, rows }).catch(() => null);
     $('#resultHero').innerHTML = `${CUP}<div class="who"><div class="lbl">오늘의 커피는</div><div class="nm">${esc(loser.name)}</div></div>${animalImg(loser.animal)}`;
     $('#resultList').innerHTML = rows.map(r => `
       <li class="${r.rank && r.rank <= 3 ? `r${r.rank}` : ''}${r.loser ? ' loser' : ''}">
@@ -73,6 +78,25 @@ export const ui = {
       </li>`).join('');
     const res = $('#result'); res.classList.remove('hidden'); res.scrollTop = 0;
     $('#hud').classList.add('hidden');
+  },
+
+  // 결과 이미지 공유: 폰은 공유 창(카카오톡·메시지 등), 공유 창이 없으면(PC 등) 이미지 파일로 저장
+  async shareResult() {
+    const blob = await shareJob;
+    if (!blob) { ui.toast('이미지를 만들지 못했어요'); return; }
+    const file = new File([blob], `coffee-result-${Date.now()}.png`, { type: 'image/png' });
+    if (navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file], text: shareText }); return; }
+      catch (e) {
+        if (e.name === 'AbortError') return;   // 사용자가 공유 창을 닫음
+        if (e.name === 'NotAllowedError') { ui.toast('이미지가 준비됐어요. 한 번 더 눌러 주세요'); return; }
+      }
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = file.name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    ui.toast('📸 결과 이미지를 저장했어요');
   },
 
   // 설정 화면으로 돌아갈 때 게임 화면 요소를 모두 숨긴다

@@ -72,6 +72,7 @@ addEventListener('resize', () => {
 });
 $('#againBtn').onclick = playAgain;
 $('#changeBtn').onclick = toSetup;
+$('#shareResultBtn').onclick = () => ui.shareResult();
 // 버튼을 누르면 폰에서 짧게 진동한다 (지원하는 기기만)
 addEventListener('pointerdown', e => {
   const b = e.target.closest('.tap, .tile');
